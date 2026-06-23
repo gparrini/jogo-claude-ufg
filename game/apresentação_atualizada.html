@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude — Comunicação, Linguagem e Agentes de IA · UFG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Urbanist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ===================== TOKENS ===================== */
+  :root{
+    --cream:#F3F0E8;
+    --cream-2:#EDE9DF;
+    --paper:#FBFAF6;
+    --ink:#2B2722;
+    --ink-soft:#5C574E;
+    --ink-faint:#9B968B;
+    /* cor-tema do Claude (coral/terracota) — nomes --mint mantidos por compatibilidade */
+    --mint:#D97757;
+    --mint-deep:#B14E2C;
+    --mint-soft:#F0D6C9;
+    --mint-tint:#FAEBE3;
+    --line:#D9D4C7;
+    --ease:cubic-bezier(.2,.7,.2,1);
+    --t:.6s;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;width:100%;overflow:hidden;background:#1c1d19;}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    color:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ===================== STAGE / SCALING ===================== */
+  #stage{
+    position:relative;
+    width:1280px;height:720px;
+    transform-origin:center center;
+  }
+  .slide{
+    position:absolute;inset:0;
+    width:1280px;height:720px;
+    background:var(--cream);
+    overflow:hidden;
+    opacity:0;visibility:hidden;
+    pointer-events:none;
+    transition:opacity var(--t) var(--ease), visibility var(--t) var(--ease);
+  }
+  .slide.active{opacity:1;visibility:visible;pointer-events:auto;}
+  .slide-inner{position:absolute;inset:0;padding:78px 96px;display:flex;flex-direction:column;justify-content:center;}
+
+  /* ===================== SHARED CHROME ===================== */
+  .kicker{
+    font-family:'Urbanist';font-weight:600;font-size:13px;letter-spacing:.32em;
+    text-transform:uppercase;color:var(--mint-deep);
+    display:flex;align-items:center;gap:12px;
+  }
+  .kicker::before{content:"";width:26px;height:2px;background:var(--mint);display:inline-block;border-radius:2px;}
+  h1.title{font-family:'Urbanist';font-weight:700;letter-spacing:-.02em;line-height:1.04;color:var(--ink);}
+  .lead{color:var(--ink-soft);font-weight:400;line-height:1.55;}
+  .accent{color:var(--mint-deep);}
+  .pageno{
+    position:absolute;bottom:34px;right:50px;
+    font-family:'Urbanist';font-weight:600;font-size:13px;color:var(--ink-faint);letter-spacing:.05em;
+  }
+  .footer-tag{
+    position:absolute;bottom:34px;left:50px;
+    font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);font-weight:500;
+  }
+  .sectiontag{
+    position:absolute;top:34px;right:50px;font-size:11px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--ink-faint);font-weight:500;
+  }
+
+  /* ===================== ANIMATIONS ===================== */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+  @keyframes growW{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  @keyframes growBar{from{width:0}}
+  @keyframes drawLine{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  @keyframes ringspin{to{transform:rotate(360deg)}}
+  @keyframes dotpulse{0%,100%{opacity:.35;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
+
+  /* entrance utility: hidden until slide active, then animate */
+  [data-anim]{opacity:0;}
+  .slide.active [data-anim="up"]{animation:fadeUp .8s var(--ease) forwards;animation-delay:var(--d,0s);}
+  .slide.active [data-anim="in"]{animation:fadeIn .9s var(--ease) forwards;animation-delay:var(--d,0s);}
+  .slide.active [data-anim="scale"]{animation:scaleIn .8s var(--ease) forwards;animation-delay:var(--d,0s);}
+
+  .barfill{transform-origin:left center;}
+  .slide.active .barfill{animation:growBar 1.1s var(--ease) forwards;animation-delay:var(--d,.3s);}
+
+  /* ===================== COVER (Slide 1) ===================== */
+  #s1{background:linear-gradient(135deg,#F3F0E8 0%,#ECE7DB 100%);}
+  #s1 .blob{
+    position:absolute;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%,var(--mint-soft),transparent 70%);
+    filter:blur(2px);
+  }
+  #s1 .b1{width:520px;height:520px;top:-160px;right:-120px;opacity:.7;animation:floaty 9s ease-in-out infinite;}
+  #s1 .b2{width:340px;height:340px;bottom:-140px;left:-80px;opacity:.55;animation:floaty 11s ease-in-out infinite reverse;}
+  #s1 .ring{
+    position:absolute;right:120px;top:50%;transform:translateY(-50%);
+    width:300px;height:300px;border-radius:50%;
+    border:1.5px solid var(--line);
+  }
+  #s1 .ring::after{
+    content:"";position:absolute;inset:-1.5px;border-radius:50%;
+    border:1.5px solid transparent;border-top-color:var(--mint);
+    animation:ringspin 6s linear infinite;
+  }
+  #s1 .orb{
+    position:absolute;inset:70px;border-radius:50%;
+    background:linear-gradient(140deg,var(--mint) 0%,var(--mint-deep) 100%);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 30px 60px -20px rgba(180,78,44,.5);
+  }
+  #s1 .orb span{font-family:'Urbanist';font-weight:800;font-size:96px;color:#fff;}
+  #s1 .cover-text{position:relative;z-index:2;max-width:720px;}
+  #s1 h1{font-size:72px;}
+  #s1 .sub{margin-top:30px;font-size:19px;color:var(--ink-soft);line-height:1.6;max-width:560px;}
+  #s1 .meta{margin-top:42px;display:flex;gap:14px;flex-wrap:wrap;}
+  .chip{
+    font-family:'Urbanist';font-weight:600;font-size:12.5px;letter-spacing:.06em;
+    padding:8px 16px;border-radius:100px;border:1px solid var(--line);
+    color:var(--ink-soft);background:rgba(255,255,255,.5);
+  }
+  .chip.solid{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+
+  /* ===================== generic heading block ===================== */
+  .head{margin-bottom:34px;}
+  .head h1{font-size:46px;margin-top:18px;}
+  .head .sub{margin-top:14px;font-size:17px;color:var(--ink-soft);max-width:760px;line-height:1.55;}
+
+  /* two columns */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:54px;flex:1;align-items:start;}
+
+  /* ===================== TIMELINE (Slide 2) ===================== */
+  .timeline{position:relative;padding-left:34px;}
+  .timeline .spine{position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--line);transform-origin:top center;}
+  .slide.active .timeline .spine{animation:drawLine 1s var(--ease) forwards;}
+  .tl-item{position:relative;margin-bottom:15px;}
+  .tl-item .dot{position:absolute;left:-33px;top:4px;width:13px;height:13px;border-radius:50%;background:var(--cream);border:2.5px solid var(--mint);}
+  .tl-item .yr{font-family:'Urbanist';font-weight:700;font-size:16px;color:var(--mint-deep);}
+  .tl-item h3{font-size:15.5px;font-weight:600;margin:1px 0 2px;color:var(--ink);}
+  .tl-item p{font-size:13px;color:var(--ink-soft);line-height:1.45;}
+  .panel{
+    background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:34px;
+    height:100%;display:flex;flex-direction:column;justify-content:center;gap:18px;
+    box-shadow:0 20px 40px -30px rgba(42,45,39,.4);
+  }
+  .panel .big{font-family:'Urbanist';font-weight:800;font-size:64px;color:var(--ink);line-height:1;}
+  .panel p{font-size:15.5px;color:var(--ink-soft);line-height:1.6;}
+  .panel .divider{height:1px;background:var(--line);}
+
+  /* ===================== feature cards ===================== */
+  .cards{display:grid;gap:20px;flex:1;align-content:center;}
+  .card{
+    background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:26px 30px;
+    display:flex;gap:22px;align-items:flex-start;
+    box-shadow:0 16px 34px -28px rgba(42,45,39,.45);
+  }
+  .card .num{font-family:'Urbanist';font-weight:800;font-size:30px;color:var(--mint);min-width:46px;}
+  .card h3{font-size:18px;font-weight:600;margin-bottom:5px;}
+  .card p{font-size:14.5px;color:var(--ink-soft);line-height:1.55;}
+
+  /* ===================== how AI works (Slide 3) ===================== */
+  .tokenflow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px;}
+  .tok{
+    font-family:'Urbanist';font-weight:600;font-size:16px;padding:11px 18px;border-radius:12px;
+    background:var(--mint-tint);border:1px solid var(--mint-soft);color:var(--ink);
+  }
+  .tok.pred{background:var(--mint);color:#fff;border-color:var(--mint);box-shadow:0 10px 22px -12px rgba(180,78,44,.6);}
+  .arrow{color:var(--mint);font-size:20px;font-weight:700;}
+  .probs{margin-top:34px;display:grid;gap:14px;max-width:560px;}
+  .prob{display:flex;align-items:center;gap:16px;}
+  .prob .pl{font-family:'Urbanist';font-weight:600;font-size:15px;width:150px;color:var(--ink);}
+  .prob .track{flex:1;height:14px;border-radius:8px;background:var(--cream-2);overflow:hidden;}
+  .prob .barfill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--mint),var(--mint-deep));}
+  .prob .pv{font-family:'Urbanist';font-weight:700;font-size:14px;color:var(--mint-deep);width:48px;text-align:right;}
+
+  /* ===================== transformer / math (Slide 4) ===================== */
+  .mathwrap{
+    margin-top:6px;background:var(--paper);border:1px solid var(--line);border-radius:20px;
+    padding:40px;display:flex;flex-direction:column;align-items:center;gap:18px;
+    box-shadow:0 22px 44px -32px rgba(42,45,39,.5);
+  }
+  math{font-size:40px;color:var(--ink);}
+  .mathwrap .cap{font-size:13.5px;color:var(--ink-faint);letter-spacing:.04em;text-align:center;}
+  .qkv{display:flex;gap:16px;margin-top:22px;}
+  .qkv .q{flex:1;background:var(--mint-tint);border:1px solid var(--mint-soft);border-radius:14px;padding:18px;text-align:center;}
+  .qkv .q b{font-family:'Urbanist';font-size:24px;color:var(--mint-deep);display:block;margin-bottom:4px;}
+  .qkv .q span{font-size:13px;color:var(--ink-soft);line-height:1.4;display:block;}
+  /* atenção — explicação intuitiva (Slide 4) */
+  .att-sentence{font-family:'Urbanist';font-weight:600;font-size:21px;color:var(--ink-soft);line-height:1.75;}
+  .att-sentence .src{color:var(--mint-deep);border-bottom:2.5px solid var(--mint);padding-bottom:1px;}
+  .att-sentence .focus{color:#fff;background:var(--mint);padding:3px 11px;border-radius:9px;box-shadow:0 8px 18px -10px rgba(180,78,44,.6);}
+  .att-label{font-size:14px;color:var(--ink-faint);margin:24px 0 16px;}
+  .att-label b{color:var(--mint-deep);}
+  .formula-note{margin-top:26px;padding-top:18px;border-top:1px dashed var(--line);
+    text-align:center;font-size:13px;color:var(--ink-faint);display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}
+  .formula-note math{font-size:19px;color:var(--ink-soft);}
+  /* tokens & contexto (Slide 3) */
+  .tc-head{display:flex;align-items:center;gap:12px;}
+  .tc-head .ic{font-size:30px;}
+  .tc-head h3{font-family:'Urbanist';font-weight:700;font-size:23px;color:var(--ink);}
+  .tc-text{font-size:14.5px;color:var(--ink-soft);line-height:1.55;}
+  .tc-chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .tc-chips .tok{font-size:14px;padding:8px 13px;}
+  .tc-chips .plus{color:var(--mint);font-weight:700;font-size:16px;}
+  .tc-note{font-size:12.5px;color:var(--ink-faint);}
+  .tc-why{margin-top:auto;background:var(--mint-tint);border:1px solid var(--mint-soft);border-radius:12px;
+    padding:12px 16px;font-size:13.5px;color:var(--ink);line-height:1.5;}
+  .tc-why b{color:var(--mint-deep);}
+
+  /* ===================== philosophy HHH (Slide 6) ===================== */
+  .hhh{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;flex:1;align-content:center;}
+  .hhh .h{
+    background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:34px 28px;text-align:center;
+    box-shadow:0 18px 38px -30px rgba(42,45,39,.45);
+  }
+  .hhh .h .ic{width:64px;height:64px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;
+    background:var(--mint-tint);border:1.5px solid var(--mint-soft);font-size:30px;}
+  .hhh .h h3{font-family:'Urbanist';font-weight:700;font-size:23px;margin-bottom:8px;}
+  .hhh .h p{font-size:14px;color:var(--ink-soft);line-height:1.55;}
+
+  /* ===================== model slides (7-9) ===================== */
+  .modelgrid{display:grid;grid-template-columns:1.05fr .95fr;gap:50px;flex:1;align-items:center;}
+  .model-visual{position:relative;display:flex;align-items:center;justify-content:center;height:100%;}
+  .model-badge{
+    width:340px;border-radius:24px;padding:38px;color:#fff;position:relative;overflow:hidden;
+    box-shadow:0 30px 60px -28px rgba(42,45,39,.55);
+  }
+  .model-badge::after{content:"";position:absolute;width:260px;height:260px;border-radius:50%;
+    right:-90px;top:-90px;background:rgba(255,255,255,.12);}
+  .model-badge .tier{font-family:'Urbanist';font-weight:600;font-size:13px;letter-spacing:.2em;text-transform:uppercase;opacity:.85;}
+  .model-badge .mname{font-family:'Urbanist';font-weight:800;font-size:48px;line-height:1;margin:10px 0 22px;}
+  .model-badge .spec{display:flex;justify-content:space-between;padding:12px 0;border-top:1px solid rgba(255,255,255,.25);font-size:14px;}
+  .model-badge .spec b{font-family:'Urbanist';font-weight:700;}
+  .b-haiku{background:linear-gradient(150deg,#E0A95C,#C07F2E);}
+  .b-sonnet{background:linear-gradient(150deg,#DD8266,#B14E2C);}
+  .b-opus{background:linear-gradient(150deg,#9A7BC8,#5E3F94);}
+  .feature-list{display:grid;gap:18px;}
+  .fl{display:flex;gap:16px;align-items:flex-start;}
+  .fl .tick{width:30px;height:30px;border-radius:9px;background:var(--mint-tint);border:1px solid var(--mint-soft);
+    display:flex;align-items:center;justify-content:center;color:var(--mint-deep);font-weight:700;flex-shrink:0;font-size:15px;}
+  .fl h3{font-size:17px;font-weight:600;margin-bottom:3px;}
+  .fl p{font-size:14px;color:var(--ink-soft);line-height:1.5;}
+
+  /* ===================== constitutional AI (Slide 10) ===================== */
+  .loop{display:flex;align-items:stretch;justify-content:center;gap:10px;}
+  .loop .step{
+    background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:22px 18px;width:218px;text-align:center;
+    display:flex;flex-direction:column;justify-content:center;
+    box-shadow:0 16px 34px -28px rgba(42,45,39,.45);
+  }
+  .loop .step .si{font-family:'Urbanist';font-weight:800;font-size:22px;color:var(--mint);margin-bottom:7px;}
+  .loop .step h3{font-size:15px;font-weight:600;margin-bottom:5px;}
+  .loop .step p{font-size:12.5px;color:var(--ink-soft);line-height:1.45;}
+  .loop .lk{color:var(--mint);font-size:24px;font-weight:700;display:flex;align-items:center;}
+
+  /* ===================== agents (Slide 11) ===================== */
+  .agentcards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:6px;}
+  .ac{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:24px 20px;text-align:center;
+    box-shadow:0 14px 30px -26px rgba(42,45,39,.45);}
+  .ac .ic{font-size:30px;margin-bottom:12px;}
+  .ac h3{font-size:15.5px;font-weight:600;margin-bottom:6px;}
+  .ac p{font-size:13px;color:var(--ink-soft);line-height:1.5;}
+  .agentflow{display:flex;align-items:stretch;justify-content:center;gap:10px;}
+  .agentflow .ac{flex:1;max-width:236px;display:flex;flex-direction:column;justify-content:flex-start;padding:30px 22px;}
+  .agentflow .ac .ic{font-size:36px;margin-bottom:16px;}
+  .fl-arrow{display:flex;align-items:center;color:var(--mint);font-size:24px;font-weight:700;}
+  .agent-note{text-align:center;font-size:15px;color:var(--ink-soft);max-width:780px;margin:34px auto 0;line-height:1.55;}
+  .agent-note b{color:var(--mint-deep);}
+  /* exemplo prático (Chat vs Agente) */
+  .task-banner{display:flex;align-items:center;gap:16px;background:var(--paper);border:1px solid var(--line);
+    border-radius:14px;padding:16px 24px;box-shadow:0 14px 30px -26px rgba(43,39,34,.45);}
+  .task-banner .tb-ic{font-size:24px;}
+  .task-banner .tb-label{font-family:'Urbanist';font-weight:700;font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--mint-deep);margin-bottom:3px;}
+  .task-banner p{font-size:15.5px;color:var(--ink);font-weight:500;line-height:1.4;}
+  .excols{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:22px;align-items:stretch;}
+  .excard{border:1px solid var(--line);border-radius:18px;padding:24px 26px;display:flex;flex-direction:column;
+    background:var(--paper);box-shadow:0 16px 34px -28px rgba(43,39,34,.45);}
+  .excard.agent{border-color:var(--mint-soft);background:var(--mint-tint);}
+  .excard .eh{display:flex;align-items:center;gap:10px;font-family:'Urbanist';font-weight:700;font-size:18px;color:var(--ink);margin-bottom:16px;}
+  .excard ul{list-style:none;display:grid;gap:10px;}
+  .excard li{font-size:13.5px;color:var(--ink-soft);line-height:1.45;padding-left:24px;position:relative;}
+  .excard.chat li::before{content:"•";position:absolute;left:4px;color:var(--ink-faint);font-weight:700;}
+  .excard.agent li::before{content:"→";position:absolute;left:0;color:var(--mint);font-weight:700;}
+  .excard .out{margin-top:auto;padding-top:14px;margin-top:18px;border-top:1px dashed var(--line);
+    font-size:13.5px;color:var(--ink);line-height:1.45;}
+  .excard .out b{color:var(--mint-deep);}
+  .excard.chat .out b{color:var(--ink);}
+
+  /* ===================== comparison table (Slide 12) ===================== */
+  .vs{display:grid;grid-template-columns:1fr auto 1fr;gap:0;flex:1;align-items:stretch;margin-top:4px;}
+  .vs .colhead{font-family:'Urbanist';font-weight:700;font-size:22px;padding:18px 26px;text-align:center;border-radius:16px 16px 0 0;}
+  .vs .ch-chat{background:var(--cream-2);color:var(--ink-soft);}
+  .vs .ch-agent{background:var(--mint);color:#fff;}
+  .vs .vcol{display:flex;flex-direction:column;}
+  .vs .vmid{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 6px;gap:0;}
+  .vs .vmid .vlabel{font-family:'Urbanist';font-weight:600;font-size:12px;letter-spacing:.05em;color:var(--ink-faint);
+    text-align:center;height:64px;display:flex;align-items:center;text-transform:uppercase;}
+  .vrow{padding:15px 26px;font-size:14.5px;color:var(--ink-soft);border-bottom:1px solid var(--line);height:64px;display:flex;align-items:center;line-height:1.4;}
+  .vcol.agent .vrow{color:var(--ink);background:var(--mint-tint);border-color:var(--mint-soft);}
+  .vcol.chat .vrow:first-of-type,.vcol.agent .vrow:first-of-type{}
+  .vs .vmid .vlabel:first-child{height:60px;}
+
+  /* ===================== fable/mythos (Slide 13) ===================== */
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;align-content:center;}
+  .duo .d{border-radius:22px;padding:34px;color:#fff;position:relative;overflow:hidden;
+    box-shadow:0 26px 52px -28px rgba(42,45,39,.55);}
+  .duo .d.fable{background:linear-gradient(145deg,#2A2722,#46403A);}
+  .duo .d.mythos{background:linear-gradient(145deg,#BE6038,#7E3A1F);}
+  .duo .d .badge{font-family:'Urbanist';font-weight:600;font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    padding:6px 12px;border:1px solid rgba(255,255,255,.3);border-radius:100px;display:inline-block;opacity:.9;}
+  .duo .d h3{font-family:'Urbanist';font-weight:800;font-size:38px;margin:16px 0 6px;}
+  .duo .d .tag{font-size:14px;opacity:.85;margin-bottom:18px;}
+  .duo .d ul{list-style:none;display:grid;gap:11px;}
+  .duo .d li{font-size:14px;line-height:1.45;padding-left:22px;position:relative;opacity:.95;}
+  .duo .d li::before{content:"→";position:absolute;left:0;opacity:.8;}
+
+  /* ===================== news (Slide 14) ===================== */
+  #s14{background:#221F1B;color:#EDEAE0;}
+  #s14 .kicker{color:#E89B7D;}
+  #s14 .kicker::before{background:#E89B7D;}
+  #s14 h1.title{color:#FBFAF6;}
+  #s14 .sectiontag,#s14 .pageno,#s14 .footer-tag{color:#7E8076;}
+  .newsgrid{display:grid;grid-template-columns:1.3fr 1fr;gap:40px;flex:1;align-items:center;}
+  .breaking{display:inline-flex;align-items:center;gap:10px;font-family:'Urbanist';font-weight:700;font-size:12px;
+    letter-spacing:.18em;text-transform:uppercase;color:#221F1B;background:#E89B7D;padding:7px 14px;border-radius:6px;}
+  .breaking .live{width:8px;height:8px;border-radius:50%;background:#221F1B;animation:dotpulse 1.4s infinite;}
+  #s14 .nlead{font-size:21px;line-height:1.5;color:#EDEAE0;margin:24px 0 0;font-weight:400;}
+  #s14 .nlead b{color:#E89B7D;font-weight:600;}
+  .impact{display:grid;gap:16px;}
+  .impact .it{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:22px;}
+  .impact .it h3{font-family:'Urbanist';font-weight:700;font-size:16px;color:#E89B7D;margin-bottom:6px;}
+  .impact .it p{font-size:13.5px;color:#C7C8BE;line-height:1.5;}
+  .disclaimer{position:absolute;bottom:64px;left:96px;right:96px;font-size:11.5px;color:#7E8076;font-style:italic;letter-spacing:.02em;}
+
+  /* ===================== activity (Slide 15) ===================== */
+  .actbox{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:34px 38px;margin-top:4px;
+    box-shadow:0 20px 42px -30px rgba(42,45,39,.5);}
+  .actbox .q{font-family:'Urbanist';font-weight:700;font-size:24px;color:var(--ink);line-height:1.3;}
+  .actbox .q .accent{color:var(--mint-deep);}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:28px;}
+  .stp{display:flex;gap:14px;align-items:flex-start;}
+  .stp .n{width:34px;height:34px;border-radius:50%;background:var(--mint);color:#fff;font-family:'Urbanist';font-weight:700;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;}
+  .stp h3{font-size:15px;font-weight:600;margin-bottom:3px;}
+  .stp p{font-size:13px;color:var(--ink-soft);line-height:1.45;}
+  .two-poles{display:flex;gap:16px;margin-top:24px;}
+  .pole{flex:1;border-radius:14px;padding:18px 22px;font-size:14px;line-height:1.5;}
+  .pole.pro{background:var(--mint-tint);border:1px solid var(--mint-soft);color:var(--ink);}
+  .pole.con{background:var(--cream-2);border:1px solid var(--line);color:var(--ink-soft);}
+  .pole b{font-family:'Urbanist';display:block;margin-bottom:6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mint-deep);}
+  .pole.con b{color:var(--ink-soft);}
+
+  /* ===================== closing (Slide 16) ===================== */
+  #s16{background:linear-gradient(135deg,#2A2722 0%,#3C372F 100%);color:var(--cream);text-align:center;}
+  #s16 .slide-inner{align-items:center;justify-content:center;}
+  #s16 .kicker{color:#E89B7D;justify-content:center;}
+  #s16 .kicker::before{background:#E89B7D;}
+  #s16 h1{font-family:'Urbanist';font-weight:800;font-size:80px;color:#FBFAF6;margin:24px 0 18px;letter-spacing:-.02em;}
+  #s16 p{font-size:19px;color:#C7C8BE;max-width:580px;line-height:1.6;}
+  #s16 .qa{margin-top:40px;display:inline-flex;align-items:center;gap:14px;font-family:'Urbanist';font-weight:700;font-size:18px;
+    color:#221F1B;background:#E89B7D;padding:16px 34px;border-radius:100px;}
+  #s16 .thanks{margin-top:40px;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#7E8076;}
+  #s16 .pageno{color:#7E8076;}
+
+  /* ===================== NAV ===================== */
+  #progress{position:fixed;top:0;left:0;height:3px;background:var(--mint);z-index:50;transition:width .5s var(--ease);}
+  .nav{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:18px;
+    background:rgba(42,45,39,.82);backdrop-filter:blur(8px);padding:9px 16px;border-radius:100px;}
+  .nav button{background:none;border:none;color:#fff;cursor:pointer;font-size:18px;width:30px;height:30px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;transition:background .25s;}
+  .nav button:hover{background:rgba(255,255,255,.16);}
+  .nav .count{font-family:'Urbanist';font-weight:600;font-size:13px;color:#fff;letter-spacing:.05em;min-width:54px;text-align:center;}
+  .hint{position:fixed;bottom:26px;right:24px;z-index:50;font-size:11px;color:rgba(255,255,255,.45);letter-spacing:.05em;}
+  /* ===================== GAME SLIDE — Corrida dos Agentes ===================== */
+  #s-game{background:linear-gradient(180deg,#1c1d19 0%,#2a2620 100%);color:var(--cream);}
+  #s-game .slide-inner{padding:44px 64px;justify-content:flex-start;}
+  #s-game .pageno{color:rgba(255,255,255,.4);}
+  .gm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .gm-title{font-family:'Urbanist';font-weight:800;font-size:34px;letter-spacing:.02em;color:var(--cream);}
+  .gm-title .accent{color:var(--mint);}
+  .gm-kicker{font-family:'Urbanist';font-weight:700;font-size:12px;letter-spacing:.4em;text-transform:uppercase;color:var(--mint);}
+  .gm-status{font-family:'Urbanist';font-weight:600;font-size:13px;letter-spacing:.2em;text-transform:uppercase;padding:8px 14px;border:1px solid rgba(217,119,87,.5);border-radius:999px;color:var(--mint);background:rgba(217,119,87,.08);}
+
+  .gm-layout{display:grid;grid-template-columns:280px 1fr;gap:28px;}
+  .gm-lobby{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;}
+  .gm-qr{background:#fff;border-radius:10px;padding:10px;display:flex;flex-direction:column;align-items:center;}
+  .gm-qr img{width:100%;height:auto;image-rendering:pixelated;display:block;}
+  .gm-qr .gm-url{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:#222;margin-top:6px;word-break:break-all;text-align:center;}
+  .gm-counts{display:flex;flex-direction:column;gap:6px;font-family:'Urbanist';font-size:13px;color:var(--cream);}
+  .gm-counts .row{display:flex;justify-content:space-between;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.04);}
+  .gm-counts .dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px;vertical-align:middle;image-rendering:pixelated;}
+
+  .gm-track{background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;}
+  .gm-lane{position:relative;height:64px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 24px,rgba(255,255,255,.02) 24px 48px);border-radius:8px;border:1px solid rgba(255,255,255,.06);}
+  .gm-lane .label{position:absolute;left:10px;top:6px;font-family:'Urbanist';font-weight:700;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.7);}
+  .gm-lane .barrier{position:absolute;top:8px;bottom:8px;width:6px;left:50%;background:repeating-linear-gradient(0deg,#ffcb47 0 6px,#1c1d19 6px 12px);border-radius:2px;opacity:.85;}
+  .gm-lane .finish{position:absolute;top:0;bottom:0;right:0;width:14px;background:repeating-linear-gradient(0deg,#fff 0 6px,#1c1d19 6px 12px);}
+  .gm-robot{position:absolute;bottom:6px;left:0;width:42px;height:42px;image-rendering:pixelated;transition:left .12s linear, transform .2s;}
+  .gm-robot.boost{filter:drop-shadow(0 0 10px #ffd166);transform:scale(1.1);}
+  .gm-robot.stumble{transform:rotate(-15deg) translateY(4px);filter:grayscale(.5) brightness(.7);}
+
+  /* Pixel robot drawn with box-shadow */
+  .pixbot{position:relative;width:14px;height:14px;}
+  .pixbot::before{content:"";position:absolute;width:3px;height:3px;background:var(--c, #fff);
+    box-shadow:
+      /* head */
+      9px 0 0 var(--c), 12px 0 0 var(--c), 15px 0 0 var(--c), 18px 0 0 var(--c),
+      6px 3px 0 var(--c), 9px 3px 0 #fff, 12px 3px 0 #000, 15px 3px 0 #000, 18px 3px 0 #fff, 21px 3px 0 var(--c),
+      6px 6px 0 var(--c), 9px 6px 0 var(--c), 12px 6px 0 var(--c), 15px 6px 0 var(--c), 18px 6px 0 var(--c), 21px 6px 0 var(--c),
+      /* antenna */
+      12px -3px 0 var(--c),
+      /* body */
+      6px 9px 0 var(--c), 9px 9px 0 var(--c), 12px 9px 0 var(--c), 15px 9px 0 var(--c), 18px 9px 0 var(--c), 21px 9px 0 var(--c),
+      3px 12px 0 var(--c), 6px 12px 0 var(--c), 9px 12px 0 var(--c), 12px 12px 0 var(--c), 15px 12px 0 var(--c), 18px 12px 0 var(--c), 21px 12px 0 var(--c), 24px 12px 0 var(--c),
+      3px 15px 0 var(--c), 24px 15px 0 var(--c),
+      6px 18px 0 var(--c), 9px 18px 0 var(--c), 18px 18px 0 var(--c), 21px 18px 0 var(--c),
+      6px 21px 0 var(--c), 9px 21px 0 var(--c), 18px 21px 0 var(--c), 21px 21px 0 var(--c);
+  }
+
+  .gm-judge{position:absolute;inset:24px;background:rgba(28,29,25,.94);border:2px solid var(--mint);border-radius:14px;padding:24px 28px;display:none;flex-direction:column;gap:10px;backdrop-filter:blur(6px);z-index:10;}
+  .gm-judge.show{display:flex;}
+  .gm-judge h3{font-family:'Urbanist';font-weight:800;font-size:22px;color:var(--mint);letter-spacing:.04em;}
+  .gm-judge .prompt{font-family:'Inter';font-size:14px;color:var(--cream);opacity:.85;font-style:italic;}
+  .gm-judge .answers{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px;}
+  .gm-judge .ans{padding:10px 12px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:13px;color:var(--cream);}
+  .gm-judge .ans b{display:block;margin-bottom:4px;font-family:'Urbanist';letter-spacing:.1em;text-transform:uppercase;font-size:11px;}
+  .gm-judge .ans.ok{border-color:#7ad27a;background:rgba(122,210,122,.12);}
+  .gm-judge .ans.bad{border-color:#e07a7a;background:rgba(224,122,122,.12);}
+  .gm-judge .verdict{font-family:'Urbanist';font-weight:700;font-size:14px;color:var(--cream);margin-top:6px;letter-spacing:.05em;}
+
+  .gm-winner{position:absolute;inset:0;background:rgba(28,29,25,.96);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:20;border-radius:16px;}
+  .gm-winner.show{display:flex;}
+  .gm-winner .crown{font-size:56px;}
+  .gm-winner h2{font-family:'Urbanist';font-weight:800;font-size:46px;color:var(--mint);}
+  .gm-winner p{color:var(--cream);font-family:'Inter';opacity:.8;}
+
+  .gm-help{font-family:'Inter';font-size:11px;color:rgba(255,255,255,.4);margin-top:10px;text-align:center;letter-spacing:.05em;}
+  </style>
+                              
+</head>
+<body>
+<div id="progress"></div>
+<div id="stage">
+
+  <!-- ===================== SLIDE 1 — CAPA ===================== -->
+  <section class="slide" id="s1">
+    <div class="blob b1"></div><div class="blob b2"></div>
+    <div class="ring" data-anim="in" style="--d:.4s"><div class="orb"><span>C</span></div></div>
+    <div class="slide-inner">
+      <div class="cover-text">
+        <div class="kicker" data-anim="up" style="--d:.1s">Seminário · Ferramentas de IA</div>
+        <h1 data-anim="up" style="--d:.25s">Claude:<br>Comunicação, Linguagem<br>e <span class="accent">Agentes de IA</span></h1>
+        <p class="sub" data-anim="up" style="--d:.45s">Uma reflexão sobre a inteligência artificial da Anthropic como ferramenta de pesquisa e produção de textos.</p>
+        <div class="meta" data-anim="up" style="--d:.6s">
+          <span class="chip solid">UFG · Faculdade de Letras</span>
+          <span class="chip">Comunicação e Linguagem II</span>
+          <span class="chip">Prof. Rubens Damasceno-Morais · 2026/1</span>
+        </div>
+      </div>
+    </div>
+    <div class="pageno">01 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE 2 — HISTÓRIA DA IA ===================== -->
+  <section class="slide" id="s2">
+    <div class="slide-inner">
+      <div class="head" style="margin-bottom:22px;">
+        <div class="kicker" data-anim="up">Fundamentos</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">Uma breve história da IA</h1>
+        <p class="sub" data-anim="up" style="--d:.22s">Da filosofia de Turing aos modelos de linguagem que dialogam conosco.</p>
+      </div>
+      <div class="cols" style="grid-template-columns:1.25fr .75fr;gap:42px;">
+        <div class="timeline">
+          <div class="spine"></div>
+          <div class="tl-item" data-anim="up" style="--d:.35s"><div class="dot"></div><div class="yr">1950</div><h3>Alan Turing</h3><p>O “Teste de Turing” define inteligência pela capacidade de conversar como um humano.</p></div>
+          <div class="tl-item" data-anim="up" style="--d:.5s"><div class="dot"></div><div class="yr">1956</div><h3>Conferência de Dartmouth</h3><p>Nasce o termo “Inteligência Artificial” como campo de estudo.</p></div>
+          <div class="tl-item" data-anim="up" style="--d:.65s"><div class="dot"></div><div class="yr">1990–2010</div><h3>Aprendizado de Máquina</h3><p>A estatística substitui regras manuais — surge o deep learning.</p></div>
+          <div class="tl-item" data-anim="up" style="--d:.8s"><div class="dot"></div><div class="yr">2017</div><h3>Transformers</h3><p>O artigo “Attention Is All You Need” cria a arquitetura dos LLMs.</p></div>
+          <div class="tl-item" data-anim="up" style="--d:.95s"><div class="dot"></div><div class="yr">2020 →</div><h3>Era dos LLMs</h3><p>Claude, GPT e outros geram linguagem em escala humana.</p></div>
+        </div>
+        <div class="panel" data-anim="scale" style="--d:.5s">
+          <div class="big">75<span style="font-size:32px;color:var(--mint-deep)"> anos</span></div>
+          <div class="divider"></div>
+          <p>Da hipótese de Turing à conversa fluente: a IA deixou de ser ficção para se tornar uma <b>ferramenta de linguagem</b> presente no cotidiano da pesquisa acadêmica.</p>
+        </div>
+      </div>
+    </div>
+    <div class="sectiontag">Como chegamos aqui</div>
+    <div class="pageno">02 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE 3 — TOKENS E CONTEXTO ===================== -->
+  <section class="slide" id="s2b">
+    <div class="slide-inner">
+      <div class="head" style="margin-bottom:24px;">
+        <div class="kicker" data-anim="up">Vocabulário essencial</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">Tokens e contexto</h1>
+        <p class="sub" data-anim="up" style="--d:.22s">Dois conceitos simples explicam como a IA lê o texto e quanto ela consegue “lembrar” de uma só vez.</p>
+      </div>
+      <div class="cols" style="align-items:stretch;">
+        <div class="panel" data-anim="up" style="--d:.35s;justify-content:flex-start;gap:16px;">
+          <div class="tc-head"><span class="ic">🧩</span><h3>Token</h3></div>
+          <p class="tc-text">O texto é quebrado em pedacinhos chamados <b>tokens</b> — uma palavra, parte de uma palavra ou um sinal de pontuação. É a unidade que o modelo realmente processa.</p>
+          <div class="tc-chips">
+            <span class="tok">comuni</span><span class="plus">+</span><span class="tok">cação</span>
+            <span class="tc-note">→ “comunicação” = 2 tokens</span>
+          </div>
+          <div class="tc-why"><b>Por que importa:</b> custo, velocidade e os limites de uso são todos medidos em tokens.</div>
+        </div>
+        <div class="panel" data-anim="up" style="--d:.5s;justify-content:flex-start;gap:16px;">
+          <div class="tc-head"><span class="ic">🪟</span><h3>Contexto</h3></div>
+          <p class="tc-text">É a “memória de trabalho” do modelo: tudo o que ele considera de uma vez — sua pergunta, a conversa e os documentos. Seu tamanho é a <b>janela de contexto</b>.</p>
+          <div class="probs" style="max-width:none;margin:0;">
+            <div class="prob"><span class="pl" style="width:118px;">Janela</span><span class="track"><span class="barfill" style="width:92%;--d:.7s;"></span></span><span class="pv">1M</span></div>
+          </div>
+          <span class="tc-note">até 1 milhão de tokens ≈ um livro inteiro de uma só vez</span>
+          <div class="tc-why"><b>Por que importa:</b> quanto maior a janela, mais informação a IA enxerga junta — respostas mais coerentes.</div>
+        </div>
+      </div>
+    </div>
+    <div class="sectiontag">Tokens &amp; contexto</div>
+    <div class="pageno">03 / 17</div>
+  </section>
+
+  <!-- ===================== SLIDE 4 — COMO A IA FUNCIONA ===================== -->
+  <section class="slide" id="s3">
+    <div class="slide-inner">
+      <div class="head">
+        <div class="kicker" data-anim="up">Funcionamento</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">Como a IA “pensa”?</h1>
+        <p class="sub" data-anim="up" style="--d:.22s">Redes neurais aprendem padrões em bilhões de textos e preveem, estatisticamente, qual a próxima <b>palavra (token)</b> mais provável.</p>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+        <div class="tokenflow" data-anim="up" style="--d:.35s">
+          <span class="tok">A</span><span class="arrow">›</span>
+          <span class="tok">linguagem</span><span class="arrow">›</span>
+          <span class="tok">é</span><span class="arrow">›</span>
+          <span class="tok">a</span><span class="arrow">›</span>
+          <span class="tok pred">essência ✦</span>
+        </div>
+        <p class="lead" data-anim="up" style="margin-top:26px;font-size:15px;max-width:680px;--d:.5s">Para cada posição, o modelo calcula uma <b>distribuição de probabilidade</b> sobre milhares de tokens possíveis e escolhe o mais coerente com o contexto:</p>
+        <div class="probs">
+          <div class="prob" data-anim="up" style="--d:.65s"><span class="pl">essência</span><span class="track"><span class="barfill" style="width:62%;--d:.8s"></span></span><span class="pv">62%</span></div>
+          <div class="prob" data-anim="up" style="--d:.75s"><span class="pl">base</span><span class="track"><span class="barfill" style="width:24%;--d:.9s"></span></span><span class="pv">24%</span></div>
+          <div class="prob" data-anim="up" style="--d:.85s"><span class="pl">chave</span><span class="track"><span class="barfill" style="width:9%;--d:1s"></span></span><span class="pv">9%</span></div>
+          <div class="prob" data-anim="up" style="--d:.95s"><span class="pl">ferramenta</span><span class="track"><span class="barfill" style="width:5%;--d:1.1s"></span></span><span class="pv">5%</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="sectiontag">Previsão de tokens</div>
+    <div class="pageno">03 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE 4 — TRANSFORMER / ATENÇÃO ===================== -->
+  <section class="slide" id="s4">
+    <div class="slide-inner">
+      <div class="head" style="margin-bottom:24px;">
+        <div class="kicker" data-anim="up">Arquitetura</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">O Transformer e a Atenção</h1>
+        <p class="sub" data-anim="up" style="--d:.22s">Para entender uma palavra, o modelo “presta atenção” nas outras palavras mais importantes da frase. É assim que ele <b>capta o contexto</b>.</p>
+      </div>
+      <div class="cols" style="grid-template-columns:1.1fr .9fr;align-items:center;">
+        <div>
+          <p class="att-sentence" data-anim="up" style="--d:.35s">“O <span class="src">cachorro</span> não cruzou a rua porque <span class="focus">ele</span> estava cansado.”</p>
+          <p class="att-label" data-anim="up" style="--d:.5s">Ao processar <b>“ele”</b>, a quem o modelo presta mais atenção?</p>
+          <div class="probs" style="max-width:none;">
+            <div class="prob" data-anim="up" style="--d:.6s"><span class="pl">cachorro</span><span class="track"><span class="barfill" style="width:74%;--d:.75s"></span></span><span class="pv">74%</span></div>
+            <div class="prob" data-anim="up" style="--d:.7s"><span class="pl">cansado</span><span class="track"><span class="barfill" style="width:14%;--d:.85s"></span></span><span class="pv">14%</span></div>
+            <div class="prob" data-anim="up" style="--d:.8s"><span class="pl">rua</span><span class="track"><span class="barfill" style="width:8%;--d:.95s"></span></span><span class="pv">8%</span></div>
+          </div>
+        </div>
+        <div class="cards" style="gap:16px;">
+          <div class="card" data-anim="up" style="--d:.55s"><div class="num">📖</div><div><h3>Lê tudo de uma vez</h3><p>Analisa a frase inteira de uma só vez, não palavra por palavra.</p></div></div>
+          <div class="card" data-anim="up" style="--d:.7s"><div class="num">⚖️</div><div><h3>Pesa a relevância</h3><p>Decide quais palavras mais importam para entender cada termo.</p></div></div>
+          <div class="card" data-anim="up" style="--d:.85s"><div class="num">🔗</div><div><h3>Mantém o contexto</h3><p>Conecta palavras mesmo distantes — é a base de todos os LLMs.</p></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="sectiontag">Mecanismo de atenção</div>
+    <div class="pageno">04 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE 5 — HISTÓRIA DA ANTHROPIC ===================== -->
+  <section class="slide" id="s5">
+    <div class="slide-inner">
+      <div class="head">
+        <div class="kicker" data-anim="up">Origem</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">A história da Anthropic</h1>
+        <p class="sub" data-anim="up" style="--d:.22s">Uma empresa nascida de uma convicção: o desenvolvimento da IA deve ser, antes de tudo, <b>seguro</b>.</p>
+      </div>
+      <div class="cols" style="align-items:center;">
+        <div class="cards">
+          <div class="card" data-anim="up" style="--d:.35s"><div class="num">2021</div><div><h3>A dissidência da OpenAI</h3><p>Dario e Daniela Amodei, ao lado de pesquisadores, deixam a OpenAI para fundar a Anthropic.</p></div></div>
+          <div class="card" data-anim="up" style="--d:.5s"><div class="num">🛡️</div><div><h3>Foco em segurança</h3><p>A motivação central foi priorizar a pesquisa em segurança e alinhamento de IA.</p></div></div>
+          <div class="card" data-anim="up" style="--d:.65s"><div class="num">⚖️</div><div><h3>Empresa de benefício público</h3><p>Estruturada para equilibrar impacto comercial e responsabilidade social.</p></div></div>
+        </div>
+        <div class="panel" data-anim="scale" style="--d:.5s">
+          <p style="font-size:24px;color:var(--ink);font-family:'Urbanist';font-weight:600;line-height:1.4;">“E se construíssemos uma IA poderosa <span class="accent">colocando a segurança em primeiro lugar?</span>”</p>
+          <div class="divider"></div>
+          <p>Essa pergunta dos irmãos <b>Amodei</b> originou a missão da Anthropic e moldou o caráter do Claude.</p>
+        </div>
+      </div>
+    </div>
+    <div class="sectiontag">Anthropic</div>
+    <div class="pageno">05 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE 6 — FILOSOFIA ===================== -->
+  <section class="slide" id="s6">
+    <div class="slide-inner">
+      <div class="head">
+        <div class="kicker" data-anim="up">Princípios</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">A filosofia do Claude</h1>
+        <p class="sub" data-anim="up" style="--d:.22s">Três pilares orientam cada resposta — o princípio “HHH” da Anthropic.</p>
+      </div>
+      <div class="hhh">
+        <div class="h" data-anim="up" style="--d:.35s"><div class="ic">🤝</div><h3>Útil</h3><p>Compreende a real intenção do usuário e oferece respostas relevantes e completas.</p></div>
+        <div class="h" data-anim="up" style="--d:.5s"><div class="ic">🔍</div><h3>Honesto</h3><p>Evita inventar informações, reconhece incertezas e admite o que não sabe.</p></div>
+        <div class="h" data-anim="up" style="--d:.65s"><div class="ic">🛟</div><h3>Inócuo</h3><p>Recusa-se a produzir conteúdo prejudicial, perigoso ou antiético.</p></div>
+      </div>
+    </div>
+    <div class="sectiontag">Helpful · Honest · Harmless</div>
+    <div class="pageno">06 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE 7 — HAIKU ===================== -->
+  <section class="slide" id="s7">
+    <div class="slide-inner">
+      <div class="head">
+        <div class="kicker" data-anim="up">A família de modelos · 1/3</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">Claude Haiku</h1>
+      </div>
+      <div class="modelgrid">
+        <div class="feature-list">
+          <div class="fl" data-anim="up" style="--d:.45s"><div class="tick">⚡</div><div><h3>Velocidade máxima</h3><p>Respostas quase instantâneas para tarefas em tempo real.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.58s"><div class="tick">💸</div><div><h3>Baixo custo</h3><p>O modelo mais econômico — ideal para grande volume de requisições.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.71s"><div class="tick">✍️</div><div><h3>Aplicações textuais rápidas</h3><p>Classificação, resumos curtos, moderação e atendimento automatizado.</p></div></div>
+        </div>
+        <div class="model-visual">
+          <div class="model-badge b-haiku" data-anim="scale" style="--d:.4s">
+            <div class="tier">Rápido & leve</div>
+            <div class="mname">Haiku 4.5</div>
+            <div class="spec"><span>Contexto</span><b>200 mil tokens</b></div>
+            <div class="spec"><span>Perfil</span><b>Velocidade</b></div>
+            <div class="spec"><span>Custo</span><b>Mais baixo</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sectiontag">Modelos Claude</div>
+    <div class="pageno">07 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE 8 — SONNET ===================== -->
+  <section class="slide" id="s8">
+    <div class="slide-inner">
+      <div class="head">
+        <div class="kicker" data-anim="up">A família de modelos · 2/3</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">Claude Sonnet</h1>
+      </div>
+      <div class="modelgrid">
+        <div class="feature-list">
+          <div class="fl" data-anim="up" style="--d:.45s"><div class="tick">⚖️</div><div><h3>O equilíbrio perfeito</h3><p>Combina inteligência elevada com velocidade e custo acessíveis.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.58s"><div class="tick">🧠</div><div><h3>Raciocínio lógico avançado</h3><p>Resolve problemas em várias etapas com consistência.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.71s"><div class="tick">🎓</div><div><h3>Preferido na academia</h3><p>Ótimo para escrita, revisão e apoio à pesquisa no dia a dia.</p></div></div>
+        </div>
+        <div class="model-visual">
+          <div class="model-badge b-sonnet" data-anim="scale" style="--d:.4s">
+            <div class="tier">Equilíbrio ideal</div>
+            <div class="mname">Sonnet 4.6</div>
+            <div class="spec"><span>Contexto</span><b>1 milhão de tokens</b></div>
+            <div class="spec"><span>Perfil</span><b>Velocidade + razão</b></div>
+            <div class="spec"><span>Uso</span><b>Produção em escala</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sectiontag">Modelos Claude</div>
+    <div class="pageno">08 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE 9 — OPUS ===================== -->
+  <section class="slide" id="s9">
+    <div class="slide-inner">
+      <div class="head">
+        <div class="kicker" data-anim="up">A família de modelos · 3/3</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">Claude Opus</h1>
+      </div>
+      <div class="modelgrid">
+        <div class="feature-list">
+          <div class="fl" data-anim="up" style="--d:.45s"><div class="tick">🌌</div><div><h3>Inteligência profunda</h3><p>O modelo Opus mais capaz para os problemas mais complexos.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.58s"><div class="tick">📊</div><div><h3>Análise de dados</h3><p>Interpreta grandes volumes de informação e raciocínio de longo alcance.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.71s"><div class="tick">✒️</div><div><h3>Redação de alto nível</h3><p>Textos longos, argumentativos e estilisticamente refinados.</p></div></div>
+        </div>
+        <div class="model-visual">
+          <div class="model-badge b-opus" data-anim="scale" style="--d:.4s">
+            <div class="tier">Inteligência máxima</div>
+            <div class="mname">Opus 4.8</div>
+            <div class="spec"><span>Contexto</span><b>1 milhão de tokens</b></div>
+            <div class="spec"><span>Perfil</span><b>Profundidade</b></div>
+            <div class="spec"><span>Uso</span><b>Tarefas complexas</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sectiontag">Modelos Claude</div>
+    <div class="pageno">09 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE 10 — CONSTITUTIONAL AI ===================== -->
+  <section class="slide" id="s10">
+    <div class="slide-inner">
+      <div class="head" style="margin-bottom:26px;">
+        <div class="kicker" data-anim="up">O diferencial</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">Constitutional AI</h1>
+        <p class="sub" data-anim="up" style="--d:.22s">Em vez de depender só de humanos, o Claude se <b>auto-supervisiona</b> seguindo uma “Constituição” de princípios éticos.</p>
+      </div>
+      <div class="loop">
+        <div class="step" data-anim="up" style="--d:.4s"><div class="si">01</div><h3>Responde</h3><p>O modelo gera uma primeira resposta a um pedido.</p></div>
+        <div class="lk" data-anim="in" style="--d:.55s">→</div>
+        <div class="step" data-anim="up" style="--d:.6s"><div class="si">02</div><h3>Critica a si mesmo</h3><p>Avalia a própria resposta segundo a Constituição.</p></div>
+        <div class="lk" data-anim="in" style="--d:.75s">→</div>
+        <div class="step" data-anim="up" style="--d:.8s"><div class="si">03</div><h3>Revisa</h3><p>Reescreve para ser mais útil, honesta e segura.</p></div>
+        <div class="lk" data-anim="in" style="--d:.95s">↺</div>
+        <div class="step" data-anim="up" style="--d:1s"><div class="si">04</div><h3>Aprende</h3><p>O ciclo treina o modelo a se alinhar sozinho.</p></div>
+      </div>
+      <div class="panel" style="margin-top:22px;padding:18px 28px;flex:none;height:auto;" data-anim="up">
+        <p style="font-size:15px;"><b>Por que importa?</b> Reduz a dependência de revisão humana caso a caso e torna os valores do modelo mais <span class="accent">transparentes e explícitos</span>.</p>
+      </div>
+    </div>
+    <div class="sectiontag">Auto-supervisão ética</div>
+    <div class="pageno">10 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE 11 — AGENTES DE IA ===================== -->
+  <section class="slide" id="s11">
+    <div class="slide-inner">
+      <div class="head" style="margin-bottom:30px;">
+        <div class="kicker" data-anim="up">Próxima fronteira</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">O que são Agentes de IA?</h1>
+        <p class="sub" data-anim="up" style="--d:.22s">Sistemas <b>autônomos</b> que não apenas respondem, mas planejam, usam ferramentas e executam tarefas para atingir um objetivo.</p>
+      </div>
+      <div class="agentflow">
+        <div class="ac" data-anim="up" style="--d:.4s"><div class="ic">🎯</div><h3>Define objetivos</h3><p>Recebe uma meta e a divide em etapas.</p></div>
+        <div class="fl-arrow" data-anim="in" style="--d:.5s">→</div>
+        <div class="ac" data-anim="up" style="--d:.55s"><div class="ic">🛠️</div><h3>Usa ferramentas</h3><p>Busca na web, lê arquivos, executa código.</p></div>
+        <div class="fl-arrow" data-anim="in" style="--d:.65s">→</div>
+        <div class="ac" data-anim="up" style="--d:.7s"><div class="ic">🔄</div><h3>Toma decisões</h3><p>Avalia resultados e ajusta o caminho.</p></div>
+        <div class="fl-arrow" data-anim="in" style="--d:.8s">→</div>
+        <div class="ac" data-anim="up" style="--d:.85s"><div class="ic">✅</div><h3>Entrega tarefas</h3><p>Conclui o trabalho com pouca supervisão.</p></div>
+      </div>
+      <p class="agent-note" data-anim="up" style="--d:1s">Diferente de um chat, o agente <b>executa a tarefa do início ao fim</b> — repetindo o ciclo e pedindo ajuda só quando necessário.</p>
+    </div>
+    <div class="sectiontag">Da conversa à ação</div>
+    <div class="pageno">11 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE 12 — CHAT vs AGENTE ===================== -->
+  <section class="slide" id="s12">
+    <div class="slide-inner">
+      <div class="head" style="margin-bottom:20px;">
+        <div class="kicker" data-anim="up">Comparação</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">IA de Chat vs. Agente de IA</h1>
+        <p class="sub" data-anim="up" style="--d:.22s">A diferença essencial entre <b>reagir</b> a um comando e <b>agir</b> com autonomia.</p>
+      </div>
+      <div class="vs">
+        <div class="vcol chat" data-anim="up" style="--d:.4s">
+          <div class="colhead ch-chat">💬 IA de Chat</div>
+          <div class="vrow">Responde a uma pergunta por vez</div>
+          <div class="vrow">Reativo — espera o comando</div>
+          <div class="vrow">Não acessa ferramentas externas</div>
+          <div class="vrow">Sem memória de objetivos longos</div>
+          <div class="vrow">Ex.: tirar uma dúvida pontual</div>
+        </div>
+        <div class="vmid" data-anim="in" style="--d:.55s">
+          <div class="vlabel" style="height:60px;">vs</div>
+          <div class="vlabel">interação</div>
+          <div class="vlabel">postura</div>
+          <div class="vlabel">recursos</div>
+          <div class="vlabel">memória</div>
+          <div class="vlabel">exemplo</div>
+        </div>
+        <div class="vcol agent" data-anim="up" style="--d:.7s">
+          <div class="colhead ch-agent">🤖 Agente de IA</div>
+          <div class="vrow">Executa tarefas de várias etapas</div>
+          <div class="vrow">Autônomo — toma a iniciativa</div>
+          <div class="vrow">Usa web, código, arquivos e APIs</div>
+          <div class="vrow">Persegue uma meta ao longo do tempo</div>
+          <div class="vrow">Ex.: pesquisar e redigir um relatório</div>
+        </div>
+      </div>
+    </div>
+    <div class="sectiontag">Reação vs. Autonomia</div>
+    <div class="pageno">12 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE — EXEMPLO PRÁTICO ===================== -->
+  <section class="slide" id="s12b">
+    <div class="slide-inner">
+      <div class="head" style="margin-bottom:22px;">
+        <div class="kicker" data-anim="up">Exemplo prático</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">Mesma tarefa, duas abordagens</h1>
+      </div>
+      <div class="task-banner" data-anim="up" style="--d:.28s">
+        <span class="tb-ic">📝</span>
+        <div>
+          <div class="tb-label">A tarefa</div>
+          <p>“Pesquise as novidades de IA desta semana e escreva um e-mail de resumo para a equipe.”</p>
+        </div>
+      </div>
+      <div class="excols">
+        <div class="excard chat" data-anim="up" style="--d:.45s">
+          <div class="eh">💬 IA de Chat</div>
+          <ul>
+            <li>Responde com um texto na própria tela, ali mesmo.</li>
+            <li>Usa só o que já aprendeu — não acessa as notícias desta semana.</li>
+            <li>Você ainda precisa pesquisar o que falta, montar e enviar o e-mail.</li>
+          </ul>
+          <div class="out"><b>Entrega:</b> um rascunho — o trabalho final fica com você.</div>
+        </div>
+        <div class="excard agent" data-anim="up" style="--d:.6s">
+          <div class="eh">🤖 Agente de IA</div>
+          <ul>
+            <li>Planeja sozinho as etapas da tarefa.</li>
+            <li>Busca as notícias na web, em tempo real.</li>
+            <li>Redige o e-mail e o deixa pronto para envio.</li>
+          </ul>
+          <div class="out"><b>Entrega:</b> a tarefa concluída, do início ao fim.</div>
+        </div>
+      </div>
+    </div>
+    <div class="sectiontag">Na prática</div>
+    <div class="pageno">00 / 00</div>
+  </section>
+
+  <!-- ===================== SLIDE 13 — FABLE 5 & MYTHOS 5 ===================== -->
+  <section class="slide" id="s13">
+    <div class="slide-inner">
+      <div class="head">
+        <div class="kicker" data-anim="up">Lançamentos · 2026</div>
+        <h1 class="title" data-anim="up" style="--d:.12s">Fable 5 e Mythos 5</h1>
+        <p class="sub" data-anim="up" style="--d:.22s">Os modelos mais recentes da Anthropic, voltados ao <b>raciocínio de longo prazo</b> e a tarefas agênticas autônomas.</p>
+      </div>
+      <div class="duo">
+        <div class="d fable" data-anim="up" style="--d:.4s">
+          <span class="badge">Disponível ao público</span>
+          <h3>Fable 5</h3>
+          <div class="tag">O modelo mais capaz de ampla disponibilidade</div>
+          <ul>
+            <li>Raciocínio profundo e trabalho agêntico de longo horizonte</li>
+            <li>Janela de contexto de 1 milhão de tokens</li>
+            <li>“Pensamento” sempre ativo, adaptado à dificuldade da tarefa</li>
+          </ul>
+        </div>
+        <div class="d mythos" data-anim="up" style="--d:.55s">
+          <span class="badge">Acesso restrito</span>
+          <h3>Mythos 5</h3>
+          <div class="tag">Mesmas capacidades, via Project Glasswing</div>
+          <ul>
+            <li>Idêntico ao Fable 5 em poder e arquitetura</li>
+            <li>Disponível apenas a participantes selecionados</li>
+            <li>Voltado a pesquisa de fronteira e usos sensíveis</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="sectiontag">Fronteira 2026</div>
+    <div class="pageno">13 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE 14 — GEOPOLÍTICA (CENÁRIO) ===================== -->
+  <section class="slide" id="s14">
+    <div class="slide-inner">
+      <div class="kicker" data-anim="up">Atualidade · Debate</div>
+      <h1 class="title" data-anim="up" style="--d:.12s;font-size:42px;margin-top:14px;">A geopolítica da IA</h1>
+      <div class="newsgrid">
+        <div>
+          <div class="breaking" data-anim="up" style="--d:.3s"><span class="live"></span>Cenário · Junho 2026</div>
+          <p class="nlead" data-anim="up" style="--d:.45s">Restrições de exportação ao <b>Mythos 5</b> entram em pauta: o acesso ao modelo de fronteira passa a ser tratado como questão de <b>segurança nacional</b>.</p>
+        </div>
+        <div class="impact">
+          <div class="it" data-anim="up" style="--d:.55s"><h3>🌐 Tecnologia estratégica</h3><p>Modelos de ponta passam a ser vistos como ativos geopolíticos, à semelhança de semicondutores.</p></div>
+          <div class="it" data-anim="up" style="--d:.68s"><h3>⚖️ Tensão regulatória</h3><p>Equilíbrio entre inovação aberta e controle estatal sobre o acesso à IA avançada.</p></div>
+          <div class="it" data-anim="up" style="--d:.81s"><h3>🗣️ Impacto na linguagem</h3><p>Quem controla os modelos influencia quais línguas e discursos são amplificados.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="disclaimer" data-anim="in" style="--d:1s">Cenário prospectivo elaborado para fins de debate em sala — ilustra tendências reais de regulação da IA, não constitui notícia confirmada.</div>
+    <div class="sectiontag">Atualidade</div>
+    <div class="pageno">14 / 16</div>
+  </section>
+
+  <!-- ===================== SLIDE GAME — Corrida dos Agentes ===================== -->
+  <section class="slide" id="s-game">
+    <div class="slide-inner">
+      <div class="gm-header">
+        <div>
+          <div class="gm-kicker">Interativo · Multiplayer</div>
+          <div class="gm-title">Corrida dos <span class="accent">Agentes</span></div>
+        </div>
+        <div class="gm-status" id="gmStatus">Aguardando jogadores…</div>
+      </div>
+      <div class="gm-layout">
+        <aside class="gm-lobby">
+          <div class="gm-qr">
+            <img id="gmQr" alt="QR Code" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=http://localhost:3000/mobile.html"/>
+            <div class="gm-url" id="gmUrl">http://localhost:3000/mobile.html</div>
+          </div>
+          <div class="gm-counts" id="gmCounts"></div>
+          <div class="gm-help">Pressione <b>Enter</b> para iniciar · <b>R</b> para reiniciar</div>
+        </aside>
+        <div class="gm-track" id="gmTrack">
+          <!-- lanes injected via JS -->
+          <div class="gm-judge" id="gmJudge">
+            <h3 id="gmJudgeTitle">⚖️ Teste de Alinhamento</h3>
+            <div class="prompt" id="gmJudgePrompt">O Juiz Claude está avaliando as respostas…</div>
+            <div class="answers" id="gmJudgeAnswers"></div>
+            <div class="verdict" id="gmJudgeVerdict"></div>
+          </div>
+          <div class="gm-winner" id="gmWinner">
+            <div class="crown">👑</div>
+            <h2 id="gmWinnerName">—</h2>
+            <p>vence a Corrida dos Agentes!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pageno">— / —</div>
+  </section>
+
+  <!-- ===================== SLIDE 16 — CONCLUSÃO / Q&A ===================== -->
+
+  <section class="slide" id="s16">
+    <div class="slide-inner">
+      <div class="kicker" data-anim="up">Síntese final</div>
+      <h1 data-anim="up" style="--d:.2s">Obrigado!</h1>
+      <p data-anim="up" style="--d:.4s">Do Teste de Turing aos agentes autônomos, o Claude representa uma ferramenta poderosa para a <b style="color:#E89B7D;font-weight:600">comunicação, a linguagem e a pesquisa</b> — desde que usada com olhar crítico.</p>
+      <div class="qa" data-anim="scale" style="--d:.6s">💬 Perguntas &amp; Respostas</div>
+      <div class="thanks" data-anim="in" style="--d:.85s">UFG · Comunicação e Linguagem II · 2026</div>
+    </div>
+    <div class="pageno">16 / 16</div>
+  </section>
+
+</div>
+
+<!-- ===================== NAV (apenas teclado) ===================== -->
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let idx = 0;
+  const progress = document.getElementById('progress');
+  const stage = document.getElementById('stage');
+
+  // numeração automática dos slides (NN / total)
+  const pad = n => String(n).padStart(2,'0');
+  slides.forEach((s,i)=>{
+    const p = s.querySelector('.pageno');
+    if(p) p.textContent = pad(i+1)+' / '+pad(total);
+  });
+
+  function show(n){
+    idx = Math.max(0, Math.min(total-1, n));
+    slides.forEach((s,i)=>s.classList.toggle('active', i===idx));
+    progress.style.width = ((idx+1)/total*100)+'%';
+  }
+
+  function fit(){
+    const s = Math.min(window.innerWidth/1280, window.innerHeight/720);
+    stage.style.transform = 'scale('+s+')';
+  }
+
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();show(idx+1);}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();show(idx-1);}
+    else if(e.key==='Home'){show(0);}
+    else if(e.key==='End'){show(total-1);}
+  });
+
+  window.addEventListener('resize', fit);
+  fit();
+  show(0);
+</script>
+
+<!-- ===================== GAME CLIENT (Telão) ===================== -->
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function(){
+  const TEAMS = [
+    { id:'chatgpt',  name:'ChatGPT',  color:'#10a37f' },
+    { id:'copilot',  name:'Copilot',  color:'#0078d4' },
+    { id:'gemini',   name:'Gemini',   color:'#4285f4' },
+    { id:'claude',   name:'Claude',   color:'#D97757' },
+  ];
+
+  const track  = document.getElementById('gmTrack');
+  const counts = document.getElementById('gmCounts');
+  TEAMS.forEach(t=>{
+    const lane = document.createElement('div');
+    lane.className='gm-lane'; lane.dataset.team=t.id;
+    lane.innerHTML = `
+      <div class="label" style="color:${t.color}">${t.name}</div>
+      <div class="barrier"></div>
+      <div class="finish"></div>
+      <div class="gm-robot" data-team="${t.id}"><div class="pixbot" style="--c:${t.color}"></div></div>`;
+    track.insertBefore(lane, document.getElementById('gmJudge'));
+    const row = document.createElement('div');
+    row.className='row';
+    row.innerHTML = `<span><span class="dot" style="background:${t.color}"></span>${t.name}</span><b data-count="${t.id}">0</b>`;
+    counts.appendChild(row);
+  });
+
+  const host = location.host || 'localhost:3000';
+  const mobileUrl = `${location.protocol}//${host}/mobile.html`;
+  document.getElementById('gmUrl').textContent = mobileUrl;
+  document.getElementById('gmQr').src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(mobileUrl)}`;
+
+  const status       = document.getElementById('gmStatus');
+  const judge        = document.getElementById('gmJudge');
+  const judgePrompt  = document.getElementById('gmJudgePrompt');
+  const judgeAnswers = document.getElementById('gmJudgeAnswers');
+  const judgeVerdict = document.getElementById('gmJudgeVerdict');
+  const winner       = document.getElementById('gmWinner');
+  const winnerName   = document.getElementById('gmWinnerName');
+
+  let socket = null;
+  if (typeof io !== 'undefined') {
+    socket = io();
+    socket.on('connect', ()=> socket.emit('host:join'));
+    socket.on('state', renderState);
+    socket.on('judge:start', d=>{
+      judgePrompt.textContent = d.prompt;
+      judgeAnswers.innerHTML = d.answers.map(a=>
+        `<div class="ans ${a.verdict==='Aprovado'?'ok':'bad'}"><b style="color:${a.color}">${a.team}</b>${a.text}</div>`
+      ).join('');
+      judgeVerdict.textContent = `Veredicto em ${d.duration/1000}s…`;
+      judge.classList.add('show');
+    });
+    socket.on('judge:end', d=>{
+      judgeVerdict.textContent = `✅ ${d.boost} ganhou BOOST · ❌ ${d.penalized.join(', ') || '—'} tropeçaram`;
+      setTimeout(()=>judge.classList.remove('show'), 1800);
+    });
+    socket.on('winner', d=>{
+      winnerName.textContent = d.team;
+      winnerName.style.color = d.color;
+      winner.classList.add('show');
+    });
+    socket.on('reset', ()=>{ winner.classList.remove('show'); judge.classList.remove('show'); });
+  } else {
+    status.textContent = 'Servidor offline';
+  }
+
+  function renderState(s){
+    status.textContent =
+      s.phase === 'lobby'  ? `${s.totalPlayers} jogador(es) · aguardando Enter` :
+      s.phase === 'racing' ? '🏁 Corrida em andamento' :
+      s.phase === 'judge'  ? '⚖️ Teste de Alinhamento' :
+                             '🏆 Fim de jogo';
+    TEAMS.forEach(t=>{
+      const c = document.querySelector(`[data-count="${t.id}"]`);
+      if (c) c.textContent = s.teams[t.id].players;
+      const robot = document.querySelector(`.gm-robot[data-team="${t.id}"]`);
+      if (!robot) return;
+      const lane = robot.parentElement;
+      const laneW = lane.clientWidth - 50;
+      const prog = Math.min(1, s.teams[t.id].progress);
+      robot.style.left = (prog * laneW) + 'px';
+      robot.classList.toggle('boost',   !!s.teams[t.id].boost);
+      robot.classList.toggle('stumble', !!s.teams[t.id].stumble);
+    });
+  }
+
+  // Atalhos do host APENAS quando o slide do jogo está ativo
+  // (não conflita com Setas/Espaço da navegação dos slides)
+  document.addEventListener('keydown', e=>{
+    const active = document.querySelector('.slide.active');
+    if (!active || active.id !== 's-game' || !socket) return;
+    if (e.key === 'Enter')              { e.preventDefault(); socket.emit('host:start'); }
+    else if (e.key.toLowerCase() === 'r'){ e.preventDefault(); socket.emit('host:reset'); }
+  });
+})();
+</script>
+</body>
+</html>
