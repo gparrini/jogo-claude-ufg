@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1c1d19">
+<title>Corrida dos Agentes · Controle</title>
+<style>
+  :root{
+    --bg:#1c1d19; --ink:#F3F0E8; --soft:#9B968B;
+    --mint:#D97757; --mint-deep:#B14E2C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;user-select:none;}
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;}
+  .screen.active{display:flex;}
+
+  /* ----- LOBBY ----- */
+  #lobby{padding:28px 22px;gap:18px;}
+  .brand{font-weight:800;font-size:22px;letter-spacing:.02em;}
+  .brand span{color:var(--mint);}
+  .sub{color:var(--soft);font-size:14px;margin-top:2px;}
+  .teams{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px;flex:1;}
+  .team{
+    border-radius:18px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;
+    background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.08);
+    font-weight:700;font-size:18px;min-height:130px;
+    transition:transform .1s, border-color .15s;
+  }
+  .team:active{transform:scale(.97);}
+  .team .count{font-size:13px;color:var(--soft);font-weight:500;}
+  .team[data-team="chatgpt"]{border-color:#10a37f;}
+  .team[data-team="copilot"]{border-color:#0078d4;}
+  .team[data-team="gemini"] {border-color:#4285f4;}
+  .team[data-team="claude"] {border-color:#D97757;}
+
+  /* ----- CONTROLLER ----- */
+  #controller{padding:14px;gap:10px;}
+  .bar{display:flex;justify-content:space-between;align-items:center;padding:4px 6px;font-size:13px;color:var(--soft);}
+  .bar b{color:var(--ink);}
+  .pads{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .pad{
+    border-radius:24px;font-weight:800;font-size:42px;letter-spacing:.04em;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--mint);color:#fff;border:none;
+    box-shadow:0 8px 0 var(--mint-deep);
+    transition:transform .04s, box-shadow .04s;
+    touch-action:manipulation;
+  }
+  .pad:active{transform:translateY(6px);box-shadow:0 2px 0 var(--mint-deep);}
+  .pad.alt{background:#3a3631;box-shadow:0 8px 0 #1c1d19;}
+  .pad.alt:active{box-shadow:0 2px 0 #1c1d19;}
+  .status{
+    text-align:center;font-size:12px;color:var(--soft);padding:6px;border-radius:8px;
+    background:rgba(255,255,255,.04);
+  }
+  .status.live{color:#7ad27a;}
+  .status.judge{color:#ffcb47;}
+</style>
+</head>
+<body>
+
+<!-- ===== TELA 1: ESCOLHA DE EQUIPE ===== -->
+<section class="screen active" id="lobby">
+  <div>
+    <div class="brand">Corrida dos <span>Agentes</span></div>
+    <div class="sub">Escolha uma IA para apoiar</div>
+  </div>
+  <div class="teams" id="teamsGrid"></div>
+  <div class="status" id="lobbyStatus">Conectando…</div>
+</section>
+
+<!-- ===== TELA 2: CONTROLE ===== -->
+<section class="screen" id="controller">
+  <div class="bar">
+    <span>Equipe: <b id="myTeam">—</b></span>
+    <span id="phaseLabel">Aguardando início…</span>
+  </div>
+  <div class="pads">
+    <button class="pad"      id="padL">◀ ESQ</button>
+    <button class="pad alt"  id="padR">DIR ▶</button>
+  </div>
+  <div class="status" id="ctrlStatus">Toque alternando ESQ → DIR o mais rápido possível!</div>
+</section>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const TEAMS = [
+    { id:'chatgpt', name:'ChatGPT', color:'#10a37f' },
+    { id:'copilot', name:'Copilot', color:'#0078d4' },
+    { id:'gemini',  name:'Gemini',  color:'#4285f4' },
+    { id:'claude',  name:'Claude',  color:'#D97757' },
+  ];
+
+  const grid = document.getElementById('teamsGrid');
+  TEAMS.forEach(t=>{
+    const el = document.createElement('button');
+    el.className='team'; el.dataset.team=t.id;
+    el.innerHTML = `<div>${t.name}</div><div class="count" data-count="${t.id}">0 jogador(es)</div>`;
+    el.style.color = t.color;
+    el.onclick = ()=> socket.emit('player:join', t.id);
+    grid.appendChild(el);
+  });
+
+  const lobby      = document.getElementById('lobby');
+  const controller = document.getElementById('controller');
+  const lobbyStatus= document.getElementById('lobbyStatus');
+  const ctrlStatus = document.getElementById('ctrlStatus');
+  const phaseLabel = document.getElementById('phaseLabel');
+  const myTeamEl   = document.getElementById('myTeam');
+
+  const socket = io();
+  let myTeam = null;
+  let phase  = 'lobby';
+
+  socket.on('connect',     ()=> lobbyStatus.textContent = 'Conectado — escolha uma equipe');
+  socket.on('disconnect',  ()=> lobbyStatus.textContent = 'Desconectado, tentando reconectar…');
+
+  socket.on('player:joined', d=>{
+    myTeam = d.team;
+    const t = TEAMS.find(x=>x.id===d.team);
+    myTeamEl.textContent = t.name;
+    myTeamEl.style.color = t.color;
+    lobby.classList.remove('active');
+    controller.classList.add('active');
+    if (navigator.vibrate) navigator.vibrate(30);
+  });
+
+  socket.on('state', s=>{
+    phase = s.phase;
+    TEAMS.forEach(t=>{
+      const c = document.querySelector(`[data-count="${t.id}"]`);
+      if (c) c.textContent = `${s.teams[t.id].players} jogador(es)`;
+    });
+    if (phase === 'racing'){
+      phaseLabel.textContent = '🏁 CORRA!';
+      ctrlStatus.textContent = 'Alterne ESQ → DIR sem parar!';
+      ctrlStatus.className = 'status live';
+    } else if (phase === 'judge'){
+      phaseLabel.textContent = '⚖️ Juiz avaliando…';
+      ctrlStatus.textContent = 'Aguarde o veredicto do Juiz Claude.';
+      ctrlStatus.className = 'status judge';
+    } else if (phase === 'ended'){
+      phaseLabel.textContent = '🏆 Fim de jogo';
+      ctrlStatus.textContent = 'Obrigado por jogar!';
+      ctrlStatus.className = 'status';
+    } else {
+      phaseLabel.textContent = 'Aguardando início…';
+      ctrlStatus.textContent = 'O host vai iniciar em instantes.';
+      ctrlStatus.className = 'status';
+    }
+  });
+
+  function tap(side){
+    if (!myTeam) return;
+    socket.emit('player:tap', side);
+    if (navigator.vibrate) navigator.vibrate(8);
+  }
+  // bind both touch and click; preventDefault to avoid 300ms delay & double-fire
+  function bind(el, side){
+    el.addEventListener('touchstart', e=>{ e.preventDefault(); tap(side); }, {passive:false});
+    el.addEventListener('mousedown',  e=>{ e.preventDefault(); tap(side); });
+  }
+  bind(document.getElementById('padL'), 'L');
+  bind(document.getElementById('padR'), 'R');
+</script>
+</body>
+</html>
