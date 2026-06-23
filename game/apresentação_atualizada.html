@@ -385,44 +385,58 @@
   .nav .count{font-family:'Urbanist';font-weight:600;font-size:13px;color:#fff;letter-spacing:.05em;min-width:54px;text-align:center;}
   .hint{position:fixed;bottom:26px;right:24px;z-index:50;font-size:11px;color:rgba(255,255,255,.45);letter-spacing:.05em;}
   /* ===================== GAME SLIDE — Corrida dos Agentes ===================== */
-  #s-game{background:linear-gradient(180deg,#1c1d19 0%,#2a2620 100%);color:var(--cream);}
-  #s-game .slide-inner{padding:44px 64px;justify-content:flex-start;}
+  #s-game{background:radial-gradient(ellipse at top,#2a2620 0%,#1c1d19 60%,#0f0f0d 100%);color:var(--cream);}
+  #s-game .slide-inner{padding:32px 48px;justify-content:flex-start;}
   #s-game .pageno{color:rgba(255,255,255,.4);}
-  .gm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
-  .gm-title{font-family:'Urbanist';font-weight:800;font-size:34px;letter-spacing:.02em;color:var(--cream);}
+  .gm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .gm-title{font-family:'Urbanist';font-weight:800;font-size:32px;letter-spacing:.02em;color:var(--cream);}
   .gm-title .accent{color:var(--mint);}
-  .gm-kicker{font-family:'Urbanist';font-weight:700;font-size:12px;letter-spacing:.4em;text-transform:uppercase;color:var(--mint);}
-  .gm-status{font-family:'Urbanist';font-weight:600;font-size:13px;letter-spacing:.2em;text-transform:uppercase;padding:8px 14px;border:1px solid rgba(217,119,87,.5);border-radius:999px;color:var(--mint);background:rgba(217,119,87,.08);}
+  .gm-kicker{font-family:'Urbanist';font-weight:700;font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:var(--mint);}
+  .gm-status{font-family:'Urbanist';font-weight:700;font-size:12px;letter-spacing:.18em;text-transform:uppercase;padding:8px 14px;border:1px solid rgba(217,119,87,.5);border-radius:999px;color:var(--mint);background:rgba(217,119,87,.08);}
+  .gm-status.live{color:#7ad27a;border-color:#7ad27a;background:rgba(122,210,122,.1);animation:pulseLive 1.5s ease-in-out infinite;}
+  @keyframes pulseLive{0%,100%{box-shadow:0 0 0 0 rgba(122,210,122,.4);}50%{box-shadow:0 0 0 8px rgba(122,210,122,0);}}
 
-  .gm-layout{display:grid;grid-template-columns:280px 1fr;gap:28px;}
-  .gm-lobby{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;}
-  .gm-qr{background:#fff;border-radius:10px;padding:10px;display:flex;flex-direction:column;align-items:center;}
+  .gm-layout{display:grid;grid-template-columns:260px 1fr 240px;gap:20px;}
+  .gm-lobby{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;}
+  .gm-qr{background:#fff;border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;}
   .gm-qr img{width:100%;height:auto;image-rendering:pixelated;display:block;}
-  .gm-qr .gm-url{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:#222;margin-top:6px;word-break:break-all;text-align:center;}
-  .gm-counts{display:flex;flex-direction:column;gap:6px;font-family:'Urbanist';font-size:13px;color:var(--cream);}
-  .gm-counts .row{display:flex;justify-content:space-between;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.04);}
-  .gm-counts .dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px;vertical-align:middle;image-rendering:pixelated;}
+  .gm-qr .gm-url{font-family:ui-monospace,monospace;font-size:10px;color:#222;margin-top:4px;word-break:break-all;text-align:center;}
+  .gm-help{font-family:'Inter';font-size:10px;color:rgba(255,255,255,.4);text-align:center;letter-spacing:.05em;line-height:1.5;}
+  .gm-help b{color:var(--mint);}
 
-  .gm-track{background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;}
-  .gm-lane{position:relative;height:64px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 24px,rgba(255,255,255,.02) 24px 48px);border-radius:8px;border:1px solid rgba(255,255,255,.06);}
-  .gm-lane .label{position:absolute;left:10px;top:6px;font-family:'Urbanist';font-weight:700;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.7);}
-  .gm-lane .barrier{position:absolute;top:8px;bottom:8px;width:6px;left:50%;background:repeating-linear-gradient(0deg,#ffcb47 0 6px,#1c1d19 6px 12px);border-radius:2px;opacity:.85;}
-  .gm-lane .finish{position:absolute;top:0;bottom:0;right:0;width:14px;background:repeating-linear-gradient(0deg,#fff 0 6px,#1c1d19 6px 12px);}
-  .gm-robot{position:absolute;bottom:6px;left:0;width:42px;height:42px;image-rendering:pixelated;transition:left .12s linear, transform .2s;}
-  .gm-robot.boost{filter:drop-shadow(0 0 10px #ffd166);transform:scale(1.1);}
-  .gm-robot.stumble{transform:rotate(-15deg) translateY(4px);filter:grayscale(.5) brightness(.7);}
+  /* PLACAR / LEADERBOARD */
+  .gm-board{background:linear-gradient(180deg,rgba(217,119,87,.08),rgba(255,255,255,.03));border:1px solid rgba(217,119,87,.2);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;}
+  .gm-board h4{font-family:'Urbanist';font-weight:800;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--mint);margin-bottom:4px;}
+  .gm-rank{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);transition:all .35s var(--ease);}
+  .gm-rank.lead{background:linear-gradient(90deg,rgba(255,203,71,.18),rgba(255,255,255,.04));border-color:#ffcb47;box-shadow:0 0 12px rgba(255,203,71,.25);}
+  .gm-rank .pos{font-family:'Urbanist';font-weight:800;font-size:14px;color:var(--cream);width:22px;text-align:center;opacity:.7;}
+  .gm-rank.lead .pos{color:#ffcb47;opacity:1;}
+  .gm-rank .nm{flex:1;font-family:'Urbanist';font-weight:700;font-size:13px;}
+  .gm-rank .pct{font-family:ui-monospace,monospace;font-size:11px;color:var(--cream);opacity:.7;}
+  .gm-rank .players{font-size:10px;color:rgba(255,255,255,.4);}
 
-  /* Pixel robot drawn with box-shadow */
+  /* PISTA */
+  .gm-track{background:linear-gradient(180deg,rgba(0,0,0,.45),rgba(0,0,0,.25));border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;}
+  .gm-lane{position:relative;height:52px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 28px,rgba(255,255,255,.01) 28px 56px);border-radius:8px;border:1px solid rgba(255,255,255,.05);overflow:hidden;}
+  .gm-lane .label{position:absolute;left:10px;top:5px;font-family:'Urbanist';font-weight:800;font-size:11px;letter-spacing:.18em;text-transform:uppercase;z-index:2;text-shadow:0 1px 2px #000;}
+  .gm-lane .bar{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,transparent,currentColor);opacity:.18;transition:width .15s linear;}
+  .gm-lane .barrier{position:absolute;top:4px;bottom:4px;width:4px;left:50%;background:repeating-linear-gradient(0deg,#ffcb47 0 4px,#1c1d19 4px 8px);border-radius:2px;opacity:.9;z-index:1;}
+  .gm-lane .finish{position:absolute;top:0;bottom:0;right:0;width:10px;background:repeating-linear-gradient(0deg,#fff 0 5px,#1c1d19 5px 10px);z-index:1;}
+  .gm-robot{position:absolute;bottom:4px;left:0;width:38px;height:38px;image-rendering:pixelated;transition:left .12s linear, transform .2s;z-index:3;}
+  .gm-robot.boost{filter:drop-shadow(0 0 14px #ffd166);animation:bouncy .25s ease-in-out infinite alternate;}
+  .gm-robot.atbarrier{filter:drop-shadow(0 0 8px #ffcb47);animation:wait 1s ease-in-out infinite;}
+  @keyframes bouncy{from{transform:scale(1.05) translateY(0);}to{transform:scale(1.15) translateY(-3px);}}
+  @keyframes wait{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
+  .gm-trail{position:absolute;bottom:6px;width:6px;height:6px;border-radius:50%;background:#fff;opacity:0;pointer-events:none;}
+
+  /* Pixel robot */
   .pixbot{position:relative;width:14px;height:14px;}
   .pixbot::before{content:"";position:absolute;width:3px;height:3px;background:var(--c, #fff);
     box-shadow:
-      /* head */
       9px 0 0 var(--c), 12px 0 0 var(--c), 15px 0 0 var(--c), 18px 0 0 var(--c),
       6px 3px 0 var(--c), 9px 3px 0 #fff, 12px 3px 0 #000, 15px 3px 0 #000, 18px 3px 0 #fff, 21px 3px 0 var(--c),
       6px 6px 0 var(--c), 9px 6px 0 var(--c), 12px 6px 0 var(--c), 15px 6px 0 var(--c), 18px 6px 0 var(--c), 21px 6px 0 var(--c),
-      /* antenna */
       12px -3px 0 var(--c),
-      /* body */
       6px 9px 0 var(--c), 9px 9px 0 var(--c), 12px 9px 0 var(--c), 15px 9px 0 var(--c), 18px 9px 0 var(--c), 21px 9px 0 var(--c),
       3px 12px 0 var(--c), 6px 12px 0 var(--c), 9px 12px 0 var(--c), 12px 12px 0 var(--c), 15px 12px 0 var(--c), 18px 12px 0 var(--c), 21px 12px 0 var(--c), 24px 12px 0 var(--c),
       3px 15px 0 var(--c), 24px 15px 0 var(--c),
@@ -430,24 +444,32 @@
       6px 21px 0 var(--c), 9px 21px 0 var(--c), 18px 21px 0 var(--c), 21px 21px 0 var(--c);
   }
 
-  .gm-judge{position:absolute;inset:24px;background:rgba(28,29,25,.94);border:2px solid var(--mint);border-radius:14px;padding:24px 28px;display:none;flex-direction:column;gap:10px;backdrop-filter:blur(6px);z-index:10;}
-  .gm-judge.show{display:flex;}
-  .gm-judge h3{font-family:'Urbanist';font-weight:800;font-size:22px;color:var(--mint);letter-spacing:.04em;}
-  .gm-judge .prompt{font-family:'Inter';font-size:14px;color:var(--cream);opacity:.85;font-style:italic;}
-  .gm-judge .answers{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px;}
-  .gm-judge .ans{padding:10px 12px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:13px;color:var(--cream);}
-  .gm-judge .ans b{display:block;margin-bottom:4px;font-family:'Urbanist';letter-spacing:.1em;text-transform:uppercase;font-size:11px;}
-  .gm-judge .ans.ok{border-color:#7ad27a;background:rgba(122,210,122,.12);}
-  .gm-judge .ans.bad{border-color:#e07a7a;background:rgba(224,122,122,.12);}
-  .gm-judge .verdict{font-family:'Urbanist';font-weight:700;font-size:14px;color:var(--cream);margin-top:6px;letter-spacing:.05em;}
+  /* MODAL BARREIRA / JUIZ */
+  .gm-judge{position:absolute;inset:16px;background:rgba(14,15,12,.96);border:2px solid var(--mint);border-radius:14px;padding:22px 26px;display:none;flex-direction:column;gap:12px;backdrop-filter:blur(10px);z-index:10;overflow-y:auto;}
+  .gm-judge.show{display:flex;animation:judgeIn .4s var(--ease);}
+  @keyframes judgeIn{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+  .gm-judge h3{font-family:'Urbanist';font-weight:800;font-size:20px;color:var(--mint);letter-spacing:.04em;display:flex;align-items:center;gap:10px;}
+  .gm-judge .prompt{font-family:'Inter';font-size:15px;color:var(--cream);line-height:1.5;padding:12px 16px;background:rgba(217,119,87,.08);border-left:3px solid var(--mint);border-radius:6px;}
+  .gm-judge .submit-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+  .gm-judge .sub-cell{padding:10px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);text-align:center;font-family:'Urbanist';font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;transition:all .25s;}
+  .gm-judge .sub-cell.ok{background:rgba(122,210,122,.15);border-color:#7ad27a;color:#7ad27a;}
+  .gm-judge .results{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+  .gm-judge .res{padding:14px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px;}
+  .gm-judge .res.win{background:linear-gradient(180deg,rgba(255,203,71,.18),rgba(255,255,255,.04));border-color:#ffcb47;box-shadow:0 0 16px rgba(255,203,71,.3);}
+  .gm-judge .res b{font-size:12px;letter-spacing:.12em;text-transform:uppercase;}
+  .gm-judge .res .score{font-family:'Urbanist';font-weight:800;font-size:32px;}
+  .gm-judge .res.win .score{color:#ffcb47;}
+  .gm-judge .res .just{font-size:10px;color:rgba(255,255,255,.6);line-height:1.4;}
+  .gm-judge .countdown{font-family:'Urbanist';font-weight:800;color:#ffcb47;text-align:center;font-size:14px;letter-spacing:.2em;}
 
-  .gm-winner{position:absolute;inset:0;background:rgba(28,29,25,.96);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:20;border-radius:16px;}
-  .gm-winner.show{display:flex;}
-  .gm-winner .crown{font-size:56px;}
-  .gm-winner h2{font-family:'Urbanist';font-weight:800;font-size:46px;color:var(--mint);}
+  /* WINNER */
+  .gm-winner{position:absolute;inset:0;background:rgba(14,15,12,.97);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:20;border-radius:14px;}
+  .gm-winner.show{display:flex;animation:judgeIn .5s var(--ease);}
+  .gm-winner .crown{font-size:64px;animation:bouncy .6s ease-in-out infinite alternate;}
+  .gm-winner h2{font-family:'Urbanist';font-weight:800;font-size:52px;}
   .gm-winner p{color:var(--cream);font-family:'Inter';opacity:.8;}
-
-  .gm-help{font-family:'Inter';font-size:11px;color:rgba(255,255,255,.4);margin-top:10px;text-align:center;letter-spacing:.05em;}
+  .confetti{position:absolute;width:8px;height:14px;top:-20px;animation:fall 3s linear infinite;}
+  @keyframes fall{to{transform:translateY(800px) rotate(720deg);opacity:0;}}
   </style>
                               
 </head>
@@ -908,7 +930,7 @@
     <div class="slide-inner">
       <div class="gm-header">
         <div>
-          <div class="gm-kicker">Interativo · Multiplayer</div>
+          <div class="gm-kicker">Interativo · Multiplayer · Juiz Claude</div>
           <div class="gm-title">Corrida dos <span class="accent">Agentes</span></div>
         </div>
         <div class="gm-status" id="gmStatus">Aguardando jogadores…</div>
@@ -916,19 +938,20 @@
       <div class="gm-layout">
         <aside class="gm-lobby">
           <div class="gm-qr">
-            <img id="gmQr" alt="QR Code" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=http://localhost:3000/mobile.html"/>
-            <div class="gm-url" id="gmUrl">http://localhost:3000/mobile.html</div>
+            <img id="gmQr" alt="QR Code" src=""/>
+            <div class="gm-url" id="gmUrl">—</div>
           </div>
-          <div class="gm-counts" id="gmCounts"></div>
-          <div class="gm-help">Pressione <b>Enter</b> para iniciar · <b>R</b> para reiniciar</div>
+          <div class="gm-help">📱 Escaneie o QR para entrar.<br>Host: <b>Enter</b> inicia · <b>R</b> reinicia</div>
         </aside>
+
         <div class="gm-track" id="gmTrack">
           <!-- lanes injected via JS -->
           <div class="gm-judge" id="gmJudge">
-            <h3 id="gmJudgeTitle">⚖️ Teste de Alinhamento</h3>
-            <div class="prompt" id="gmJudgePrompt">O Juiz Claude está avaliando as respostas…</div>
-            <div class="answers" id="gmJudgeAnswers"></div>
-            <div class="verdict" id="gmJudgeVerdict"></div>
+            <h3>⚖️ <span>Barreira do Alinhamento</span> · Juiz Claude</h3>
+            <div class="prompt" id="gmJudgePrompt">—</div>
+            <div class="countdown" id="gmJudgeCountdown">Aguardando respostas das equipes…</div>
+            <div class="submit-grid" id="gmSubmitGrid"></div>
+            <div class="results" id="gmJudgeResults" style="display:none;"></div>
           </div>
           <div class="gm-winner" id="gmWinner">
             <div class="crown">👑</div>
@@ -936,10 +959,17 @@
             <p>vence a Corrida dos Agentes!</p>
           </div>
         </div>
+
+        <aside class="gm-board">
+          <h4>🏆 Placar ao vivo</h4>
+          <div id="gmRanks"></div>
+        </aside>
       </div>
     </div>
     <div class="pageno">— / —</div>
   </section>
+
+
 
   <!-- ===================== SLIDE 16 — CONCLUSÃO / Q&A ===================== -->
 
@@ -999,92 +1029,187 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 (function(){
-  const TEAMS = [
-    { id:'chatgpt',  name:'ChatGPT',  color:'#10a37f' },
-    { id:'copilot',  name:'Copilot',  color:'#0078d4' },
-    { id:'gemini',   name:'Gemini',   color:'#4285f4' },
-    { id:'claude',   name:'Claude',   color:'#D97757' },
-  ];
+  let TEAMS = [];
+  const track     = document.getElementById('gmTrack');
+  const judge     = document.getElementById('gmJudge');
+  const ranksEl   = document.getElementById('gmRanks');
+  const status    = document.getElementById('gmStatus');
+  const jPrompt   = document.getElementById('gmJudgePrompt');
+  const jCount    = document.getElementById('gmJudgeCountdown');
+  const jGrid     = document.getElementById('gmSubmitGrid');
+  const jResults  = document.getElementById('gmJudgeResults');
+  const winner    = document.getElementById('gmWinner');
+  const winnerNm  = document.getElementById('gmWinnerName');
 
-  const track  = document.getElementById('gmTrack');
-  const counts = document.getElementById('gmCounts');
-  TEAMS.forEach(t=>{
-    const lane = document.createElement('div');
-    lane.className='gm-lane'; lane.dataset.team=t.id;
-    lane.innerHTML = `
-      <div class="label" style="color:${t.color}">${t.name}</div>
-      <div class="barrier"></div>
-      <div class="finish"></div>
-      <div class="gm-robot" data-team="${t.id}"><div class="pixbot" style="--c:${t.color}"></div></div>`;
-    track.insertBefore(lane, document.getElementById('gmJudge'));
-    const row = document.createElement('div');
-    row.className='row';
-    row.innerHTML = `<span><span class="dot" style="background:${t.color}"></span>${t.name}</span><b data-count="${t.id}">0</b>`;
-    counts.appendChild(row);
-  });
+  let socket = null, deadline = 0, tInt = null;
 
-  const host = location.host || 'localhost:3000';
-  const mobileUrl = `${location.protocol}//${host}/mobile.html`;
-  document.getElementById('gmUrl').textContent = mobileUrl;
-  document.getElementById('gmQr').src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(mobileUrl)}`;
+  function buildLanes(){
+    // remove lanes antigas
+    track.querySelectorAll('.gm-lane').forEach(n => n.remove());
+    ranksEl.innerHTML = '';
+    jGrid.innerHTML = '';
+    TEAMS.forEach(t => {
+      const lane = document.createElement('div');
+      lane.className='gm-lane'; lane.dataset.team=t.id;
+      lane.style.color = t.color;
+      lane.innerHTML = `
+        <div class="bar" data-bar="${t.id}"></div>
+        <div class="label" style="color:${t.color}">${t.name}</div>
+        <div class="barrier"></div>
+        <div class="finish"></div>
+        <div class="gm-robot" data-team="${t.id}"><div class="pixbot" style="--c:${t.color}"></div></div>`;
+      track.insertBefore(lane, judge);
 
-  const status       = document.getElementById('gmStatus');
-  const judge        = document.getElementById('gmJudge');
-  const judgePrompt  = document.getElementById('gmJudgePrompt');
-  const judgeAnswers = document.getElementById('gmJudgeAnswers');
-  const judgeVerdict = document.getElementById('gmJudgeVerdict');
-  const winner       = document.getElementById('gmWinner');
-  const winnerName   = document.getElementById('gmWinnerName');
+      const rk = document.createElement('div');
+      rk.className='gm-rank'; rk.dataset.rank=t.id;
+      rk.innerHTML = `<div class="pos">—</div>
+        <div class="nm" style="color:${t.color}">${t.name}</div>
+        <div><div class="pct" data-pct="${t.id}">0%</div><div class="players" data-pl="${t.id}">0 jog</div></div>`;
+      ranksEl.appendChild(rk);
 
-  let socket = null;
+      const cell = document.createElement('div');
+      cell.className='sub-cell'; cell.dataset.sub=t.id;
+      cell.style.color = t.color;
+      cell.textContent = t.name + ' ⌛';
+      jGrid.appendChild(cell);
+    });
+  }
+
   if (typeof io !== 'undefined') {
     socket = io();
     socket.on('connect', ()=> socket.emit('host:join'));
+
+    socket.on('config', cfg => {
+      TEAMS = cfg.teams;
+      buildLanes();
+      const mobileUrl = (cfg.publicUrl && cfg.publicUrl.trim())
+        ? cfg.publicUrl.replace(/\/+$/,'') + '/mobile.html'
+        : `${location.protocol}//${location.host}/mobile.html`;
+      document.getElementById('gmUrl').textContent = mobileUrl;
+      document.getElementById('gmQr').src =
+        `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=0&data=${encodeURIComponent(mobileUrl)}`;
+    });
+
     socket.on('state', renderState);
-    socket.on('judge:start', d=>{
-      judgePrompt.textContent = d.prompt;
-      judgeAnswers.innerHTML = d.answers.map(a=>
-        `<div class="ans ${a.verdict==='Aprovado'?'ok':'bad'}"><b style="color:${a.color}">${a.team}</b>${a.text}</div>`
-      ).join('');
-      judgeVerdict.textContent = `Veredicto em ${d.duration/1000}s…`;
+
+    socket.on('judge:prompt', d => {
+      deadline = d.deadline;
+      jPrompt.textContent = d.prompt;
+      jResults.style.display='none'; jResults.innerHTML='';
+      jGrid.style.display='grid';
+      jGrid.querySelectorAll('.sub-cell').forEach(c => { c.classList.remove('ok'); c.textContent = c.textContent.replace('✓','⌛'); });
       judge.classList.add('show');
+      startCountdown();
     });
-    socket.on('judge:end', d=>{
-      judgeVerdict.textContent = `✅ ${d.boost} ganhou BOOST · ❌ ${d.penalized.join(', ') || '—'} tropeçaram`;
-      setTimeout(()=>judge.classList.remove('show'), 1800);
+
+    socket.on('team:answered', d => {
+      const cell = jGrid.querySelector(`[data-sub="${d.team}"]`);
+      if (!cell) return;
+      const t = TEAMS.find(x=>x.id===d.team);
+      cell.classList.add('ok');
+      cell.textContent = (t?t.name:d.team) + ' ✓';
     });
-    socket.on('winner', d=>{
-      winnerName.textContent = d.team;
-      winnerName.style.color = d.color;
+
+    socket.on('judge:evaluating', () => {
+      if (tInt) { clearInterval(tInt); tInt = null; }
+      jCount.textContent = '⚖️ Claude está avaliando as respostas…';
+    });
+
+    socket.on('judge:result', d => {
+      jGrid.style.display='none';
+      jResults.style.display='grid';
+      jCount.textContent = `🏆 ${d.winner} venceu o julgamento e ganhou BOOST!`;
+      jCount.style.color = d.winnerColor;
+      jResults.innerHTML = d.results.map(r =>
+        `<div class="res ${r.isWinner?'win':''}" style="border-color:${r.isWinner?'#ffcb47':r.color}33">
+           <b style="color:${r.color}">${r.team}</b>
+           <div class="score" style="color:${r.isWinner?'#ffcb47':r.color}">${r.score}<span style="font-size:14px;opacity:.5">/10</span></div>
+           <div class="just">${escapeHtml(r.justification||'')}</div>
+         </div>`).join('');
+      setTimeout(()=>{ judge.classList.remove('show'); jCount.style.color=''; }, 6500);
+    });
+
+    socket.on('winner', d => {
+      winnerNm.textContent = d.team;
+      winnerNm.style.color = d.color;
       winner.classList.add('show');
+      launchConfetti(d.color);
     });
-    socket.on('reset', ()=>{ winner.classList.remove('show'); judge.classList.remove('show'); });
+
+    socket.on('reset', () => {
+      winner.classList.remove('show'); judge.classList.remove('show');
+      document.querySelectorAll('.confetti').forEach(c=>c.remove());
+    });
   } else {
     status.textContent = 'Servidor offline';
   }
 
   function renderState(s){
-    status.textContent =
-      s.phase === 'lobby'  ? `${s.totalPlayers} jogador(es) · aguardando Enter` :
-      s.phase === 'racing' ? '🏁 Corrida em andamento' :
-      s.phase === 'judge'  ? '⚖️ Teste de Alinhamento' :
-                             '🏆 Fim de jogo';
-    TEAMS.forEach(t=>{
-      const c = document.querySelector(`[data-count="${t.id}"]`);
-      if (c) c.textContent = s.teams[t.id].players;
-      const robot = document.querySelector(`.gm-robot[data-team="${t.id}"]`);
-      if (!robot) return;
-      const lane = robot.parentElement;
-      const laneW = lane.clientWidth - 50;
-      const prog = Math.min(1, s.teams[t.id].progress);
-      robot.style.left = (prog * laneW) + 'px';
-      robot.classList.toggle('boost',   !!s.teams[t.id].boost);
-      robot.classList.toggle('stumble', !!s.teams[t.id].stumble);
+    if (!TEAMS.length) return;
+    const phaseLabel = {
+      lobby:   `${s.totalPlayers} jogador(es) · aguardando Enter`,
+      racing:  '🏁 Corrida em andamento',
+      judging: '⚖️ Barreira · respostas das equipes',
+      ended:   '🏆 Fim de jogo'
+    }[s.phase] || s.phase;
+    status.textContent = phaseLabel;
+    status.classList.toggle('live', s.phase === 'racing');
+
+    // posições / ranking
+    const arr = TEAMS.map(t => ({...t, ...s.teams[t.id]}));
+    arr.sort((a,b)=> b.progress - a.progress);
+
+    arr.forEach((t, i) => {
+      const lane = document.querySelector(`.gm-lane[data-team="${t.id}"]`);
+      const robot = lane && lane.querySelector('.gm-robot');
+      const bar = lane && lane.querySelector(`[data-bar="${t.id}"]`);
+      if (robot){
+        const laneW = lane.clientWidth - 46;
+        robot.style.left = (t.progress * laneW) + 'px';
+        robot.classList.toggle('boost', !!t.boost);
+        robot.classList.toggle('atbarrier', !!t.atBarrier);
+      }
+      if (bar) bar.style.width = (t.progress * 100) + '%';
+
+      const rk = document.querySelector(`.gm-rank[data-rank="${t.id}"]`);
+      if (rk){
+        rk.querySelector('.pos').textContent = (i+1)+'º';
+        rk.classList.toggle('lead', i===0 && t.progress > 0);
+        const pct = rk.querySelector(`[data-pct="${t.id}"]`);
+        const pl  = rk.querySelector(`[data-pl="${t.id}"]`);
+        if (pct) pct.textContent = Math.round(t.progress*100)+'%';
+        if (pl)  pl.textContent  = t.players + ' jog';
+        // reorder visually
+        ranksEl.appendChild(rk);
+      }
     });
   }
 
+  function startCountdown(){
+    if (tInt) clearInterval(tInt);
+    tInt = setInterval(()=>{
+      const s = Math.max(0, Math.floor((deadline - Date.now())/1000));
+      jCount.textContent = `⏱️ Equipes têm ${s}s para colar a resposta da sua IA…`;
+      if (s <= 0){ clearInterval(tInt); tInt = null; }
+    }, 250);
+  }
+
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function launchConfetti(color){
+    const colors = [color, '#ffcb47', '#fff', '#7ad27a', '#D97757'];
+    for (let i=0;i<80;i++){
+      const c = document.createElement('div');
+      c.className='confetti';
+      c.style.left = Math.random()*100+'%';
+      c.style.background = colors[i%colors.length];
+      c.style.animationDelay = (Math.random()*2)+'s';
+      c.style.animationDuration = (2+Math.random()*2)+'s';
+      winner.appendChild(c);
+    }
+  }
+
   // Atalhos do host APENAS quando o slide do jogo está ativo
-  // (não conflita com Setas/Espaço da navegação dos slides)
   document.addEventListener('keydown', e=>{
     const active = document.querySelector('.slide.active');
     if (!active || active.id !== 's-game' || !socket) return;
@@ -1095,3 +1220,4 @@
 </script>
 </body>
 </html>
+

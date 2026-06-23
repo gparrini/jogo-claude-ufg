@@ -1,14 +1,20 @@
 {
   "name": "corrida-dos-agentes",
-  "version": "1.0.0",
-  "description": "Jogo multiplayer de fliperama para apresentação 'Comunicação, Linguagem e Agentes de IA' — UFG.",
+  "version": "2.0.0",
+  "description": "Jogo multiplayer de fliperama para apresentação — Claude como juiz",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "tunnel": "npx --yes localtunnel --port 3000 --subdomain corrida-agentes",
+    "start:tunnel": "concurrently -k -n srv,tun \"npm start\" \"npm run tunnel\""
   },
   "dependencies": {
     "express": "^4.19.2",
     "socket.io": "^4.7.5"
-  }
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "localtunnel": "^2.0.2"
+  },
+  "engines": { "node": ">=18" }
 }
