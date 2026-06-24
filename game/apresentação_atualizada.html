@@ -386,96 +386,163 @@
   .hint{position:fixed;bottom:26px;right:24px;z-index:50;font-size:11px;color:rgba(255,255,255,.45);letter-spacing:.05em;}
   /* ===================== GAME SLIDE — Corrida dos Agentes ===================== */
   #s-game{background:radial-gradient(ellipse at top,#2a2620 0%,#1c1d19 60%,#0f0f0d 100%);color:var(--cream);}
-  #s-game .slide-inner{padding:32px 48px;justify-content:flex-start;}
+  #s-game .slide-inner{padding:28px 40px 44px;justify-content:flex-start;gap:14px;}
   #s-game .pageno{color:rgba(255,255,255,.4);}
-  .gm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-  .gm-title{font-family:'Urbanist';font-weight:800;font-size:32px;letter-spacing:.02em;color:var(--cream);}
+  .gm-header{display:flex;align-items:center;justify-content:space-between;}
+  .gm-title{font-family:'Urbanist';font-weight:800;font-size:30px;letter-spacing:.02em;color:var(--cream);line-height:1.1;}
   .gm-title .accent{color:var(--mint);}
-  .gm-kicker{font-family:'Urbanist';font-weight:700;font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:var(--mint);}
-  .gm-status{font-family:'Urbanist';font-weight:700;font-size:12px;letter-spacing:.18em;text-transform:uppercase;padding:8px 14px;border:1px solid rgba(217,119,87,.5);border-radius:999px;color:var(--mint);background:rgba(217,119,87,.08);}
+  .gm-kicker{font-family:'Urbanist';font-weight:700;font-size:11px;letter-spacing:.36em;text-transform:uppercase;color:var(--mint);margin-bottom:4px;}
+  .gm-status{font-family:'Urbanist';font-weight:700;font-size:11px;letter-spacing:.18em;text-transform:uppercase;padding:8px 14px;border:1px solid rgba(217,119,87,.5);border-radius:999px;color:var(--mint);background:rgba(217,119,87,.08);}
   .gm-status.live{color:#7ad27a;border-color:#7ad27a;background:rgba(122,210,122,.1);animation:pulseLive 1.5s ease-in-out infinite;}
   @keyframes pulseLive{0%,100%{box-shadow:0 0 0 0 rgba(122,210,122,.4);}50%{box-shadow:0 0 0 8px rgba(122,210,122,0);}}
 
-  .gm-layout{display:grid;grid-template-columns:260px 1fr 240px;gap:20px;}
-  .gm-lobby{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;}
+  .gm-layout{display:grid;grid-template-columns:230px 1fr 260px;gap:16px;flex:1;min-height:0;}
+  .gm-lobby{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;}
   .gm-qr{background:#fff;border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;}
   .gm-qr img{width:100%;height:auto;image-rendering:pixelated;display:block;}
   .gm-qr .gm-url{font-family:ui-monospace,monospace;font-size:10px;color:#222;margin-top:4px;word-break:break-all;text-align:center;}
-  .gm-help{font-family:'Inter';font-size:10px;color:rgba(255,255,255,.4);text-align:center;letter-spacing:.05em;line-height:1.5;}
+  .gm-help{font-family:'Inter';font-size:10.5px;color:rgba(255,255,255,.5);text-align:center;letter-spacing:.03em;line-height:1.55;}
   .gm-help b{color:var(--mint);}
 
-  /* PLACAR / LEADERBOARD */
-  .gm-board{background:linear-gradient(180deg,rgba(217,119,87,.08),rgba(255,255,255,.03));border:1px solid rgba(217,119,87,.2);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;}
-  .gm-board h4{font-family:'Urbanist';font-weight:800;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--mint);margin-bottom:4px;}
-  .gm-rank{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);transition:all .35s var(--ease);}
+  /* ÍCONE SVG genérico (substitui emojis) */
+  .ic{display:inline-block;width:1em;height:1em;vertical-align:-.16em;flex-shrink:0;fill:currentColor;}
+  .ic.lg{width:1.35em;height:1.35em;vertical-align:-.25em;}
+
+  /* PLACAR */
+  .gm-board{background:linear-gradient(180deg,rgba(217,119,87,.08),rgba(255,255,255,.03));border:1px solid rgba(217,119,87,.2);border-radius:14px;padding:14px 12px;display:flex;flex-direction:column;gap:10px;overflow:hidden;}
+  .gm-board h4{font-family:'Urbanist';font-weight:800;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--mint);margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+  #gmRanks{display:flex;flex-direction:column;gap:8px;}
+  .gm-rank{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);transition:all .35s var(--ease);cursor:pointer;}
+  .gm-rank:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14);}
   .gm-rank.lead{background:linear-gradient(90deg,rgba(255,203,71,.18),rgba(255,255,255,.04));border-color:#ffcb47;box-shadow:0 0 12px rgba(255,203,71,.25);}
-  .gm-rank .pos{font-family:'Urbanist';font-weight:800;font-size:14px;color:var(--cream);width:22px;text-align:center;opacity:.7;}
+  .gm-rank .pos{font-family:'Urbanist';font-weight:800;font-size:13px;color:var(--cream);width:22px;text-align:center;opacity:.7;}
   .gm-rank.lead .pos{color:#ffcb47;opacity:1;}
-  .gm-rank .nm{flex:1;font-family:'Urbanist';font-weight:700;font-size:13px;}
-  .gm-rank .pct{font-family:ui-monospace,monospace;font-size:11px;color:var(--cream);opacity:.7;}
-  .gm-rank .players{font-size:10px;color:rgba(255,255,255,.4);}
+  .gm-rank .nm{flex:1;font-family:'Urbanist';font-weight:700;font-size:13px;min-width:0;}
+  .gm-rank .pct{font-family:ui-monospace,monospace;font-size:11px;color:var(--cream);opacity:.85;text-align:right;}
+  .gm-rank .players{font-size:9.5px;color:rgba(255,255,255,.45);text-align:right;margin-top:2px;}
+  .gm-rank .info-tag{font-size:9px;color:#ffcb47;letter-spacing:.12em;text-transform:uppercase;margin-top:3px;opacity:0;transition:opacity .3s;}
+  .gm-rank.has-result .info-tag{opacity:1;}
 
   /* PISTA */
-  .gm-track{background:linear-gradient(180deg,rgba(0,0,0,.45),rgba(0,0,0,.25));border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;}
-  .gm-lane{position:relative;height:52px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 28px,rgba(255,255,255,.01) 28px 56px);border-radius:8px;border:1px solid rgba(255,255,255,.05);overflow:hidden;}
-  .gm-lane .label{position:absolute;left:10px;top:5px;font-family:'Urbanist';font-weight:800;font-size:11px;letter-spacing:.18em;text-transform:uppercase;z-index:2;text-shadow:0 1px 2px #000;}
+  .gm-track-wrap{display:flex;flex-direction:column;gap:10px;min-height:0;}
+  .gm-track{background:linear-gradient(180deg,rgba(0,0,0,.45),rgba(0,0,0,.25));border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;flex:1;min-height:0;}
+  .gm-lane{position:relative;height:50px;border-radius:8px;border:1px solid rgba(255,255,255,.05);overflow:hidden;display:flex;align-items:stretch;background:rgba(0,0,0,.25);}
+  .gm-lane .label{flex:0 0 100px;display:flex;align-items:center;padding:0 12px;font-family:'Urbanist';font-weight:800;font-size:11px;letter-spacing:.14em;text-transform:uppercase;z-index:5;background:linear-gradient(90deg,rgba(0,0,0,.7) 60%,rgba(0,0,0,0));border-right:1px solid rgba(255,255,255,.08);text-shadow:0 1px 2px #000;}
+  .gm-lane .race{position:relative;flex:1;min-width:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 28px,rgba(255,255,255,.01) 28px 56px);}
   .gm-lane .bar{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,transparent,currentColor);opacity:.18;transition:width .15s linear;}
-  .gm-lane .barrier{position:absolute;top:4px;bottom:4px;width:4px;left:50%;background:repeating-linear-gradient(0deg,#ffcb47 0 4px,#1c1d19 4px 8px);border-radius:2px;opacity:.9;z-index:1;}
-  .gm-lane .finish{position:absolute;top:0;bottom:0;right:0;width:10px;background:repeating-linear-gradient(0deg,#fff 0 5px,#1c1d19 5px 10px);z-index:1;}
-  .gm-robot{position:absolute;bottom:4px;left:0;width:38px;height:38px;image-rendering:pixelated;transition:left .12s linear, transform .2s;z-index:3;}
+  .gm-lane .barrier{position:absolute;top:4px;bottom:4px;width:3px;background:repeating-linear-gradient(0deg,#ffcb47 0 4px,#1c1d19 4px 8px);border-radius:2px;opacity:.8;z-index:1;transform:translateX(-50%);}
+  .gm-lane .barrier.done{background:repeating-linear-gradient(0deg,#7ad27a 0 4px,#1c1d19 4px 8px);opacity:.45;}
+  .gm-lane .finish{position:absolute;top:0;bottom:0;right:0;width:8px;background:repeating-linear-gradient(0deg,#fff 0 5px,#1c1d19 5px 10px);z-index:1;}
+  .gm-robot{position:absolute;bottom:3px;left:0;width:30px;height:30px;image-rendering:pixelated;transition:left .12s linear, transform .2s;z-index:3;}
   .gm-robot.boost{filter:drop-shadow(0 0 14px #ffd166);animation:bouncy .25s ease-in-out infinite alternate;}
   .gm-robot.atbarrier{filter:drop-shadow(0 0 8px #ffcb47);animation:wait 1s ease-in-out infinite;}
   @keyframes bouncy{from{transform:scale(1.05) translateY(0);}to{transform:scale(1.15) translateY(-3px);}}
   @keyframes wait{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
-  .gm-trail{position:absolute;bottom:6px;width:6px;height:6px;border-radius:50%;background:#fff;opacity:0;pointer-events:none;}
+  .gm-lane .judgebadge{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:#ffcb47;color:#1c1d19;font-family:'Urbanist';font-weight:800;font-size:10px;letter-spacing:.1em;padding:4px 8px;border-radius:6px;z-index:4;animation:wait 1.2s ease-in-out infinite;display:flex;align-items:center;gap:4px;}
 
   /* Pixel robot */
   .pixbot{position:relative;width:14px;height:14px;}
-  .pixbot::before{content:"";position:absolute;width:3px;height:3px;background:var(--c, #fff);
+  .pixbot::before{content:"";position:absolute;width:2.4px;height:2.4px;background:var(--c, #fff);
     box-shadow:
-      9px 0 0 var(--c), 12px 0 0 var(--c), 15px 0 0 var(--c), 18px 0 0 var(--c),
-      6px 3px 0 var(--c), 9px 3px 0 #fff, 12px 3px 0 #000, 15px 3px 0 #000, 18px 3px 0 #fff, 21px 3px 0 var(--c),
-      6px 6px 0 var(--c), 9px 6px 0 var(--c), 12px 6px 0 var(--c), 15px 6px 0 var(--c), 18px 6px 0 var(--c), 21px 6px 0 var(--c),
-      12px -3px 0 var(--c),
-      6px 9px 0 var(--c), 9px 9px 0 var(--c), 12px 9px 0 var(--c), 15px 9px 0 var(--c), 18px 9px 0 var(--c), 21px 9px 0 var(--c),
-      3px 12px 0 var(--c), 6px 12px 0 var(--c), 9px 12px 0 var(--c), 12px 12px 0 var(--c), 15px 12px 0 var(--c), 18px 12px 0 var(--c), 21px 12px 0 var(--c), 24px 12px 0 var(--c),
-      3px 15px 0 var(--c), 24px 15px 0 var(--c),
-      6px 18px 0 var(--c), 9px 18px 0 var(--c), 18px 18px 0 var(--c), 21px 18px 0 var(--c),
-      6px 21px 0 var(--c), 9px 21px 0 var(--c), 18px 21px 0 var(--c), 21px 21px 0 var(--c);
+      7.2px 0 0 var(--c), 9.6px 0 0 var(--c), 12px 0 0 var(--c), 14.4px 0 0 var(--c),
+      4.8px 2.4px 0 var(--c), 7.2px 2.4px 0 #fff, 9.6px 2.4px 0 #000, 12px 2.4px 0 #000, 14.4px 2.4px 0 #fff, 16.8px 2.4px 0 var(--c),
+      4.8px 4.8px 0 var(--c), 7.2px 4.8px 0 var(--c), 9.6px 4.8px 0 var(--c), 12px 4.8px 0 var(--c), 14.4px 4.8px 0 var(--c), 16.8px 4.8px 0 var(--c),
+      9.6px -2.4px 0 var(--c),
+      4.8px 7.2px 0 var(--c), 7.2px 7.2px 0 var(--c), 9.6px 7.2px 0 var(--c), 12px 7.2px 0 var(--c), 14.4px 7.2px 0 var(--c), 16.8px 7.2px 0 var(--c),
+      2.4px 9.6px 0 var(--c), 4.8px 9.6px 0 var(--c), 7.2px 9.6px 0 var(--c), 9.6px 9.6px 0 var(--c), 12px 9.6px 0 var(--c), 14.4px 9.6px 0 var(--c), 16.8px 9.6px 0 var(--c), 19.2px 9.6px 0 var(--c),
+      2.4px 12px 0 var(--c), 19.2px 12px 0 var(--c),
+      4.8px 14.4px 0 var(--c), 7.2px 14.4px 0 var(--c), 14.4px 14.4px 0 var(--c), 16.8px 14.4px 0 var(--c),
+      4.8px 16.8px 0 var(--c), 7.2px 16.8px 0 var(--c), 14.4px 16.8px 0 var(--c), 16.8px 16.8px 0 var(--c);
   }
 
-  /* MODAL BARREIRA / JUIZ */
-  .gm-judge{position:absolute;inset:16px;background:rgba(14,15,12,.96);border:2px solid var(--mint);border-radius:14px;padding:22px 26px;display:none;flex-direction:column;gap:12px;backdrop-filter:blur(10px);z-index:10;overflow-y:auto;}
-  .gm-judge.show{display:flex;animation:judgeIn .4s var(--ease);}
-  @keyframes judgeIn{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
-  .gm-judge h3{font-family:'Urbanist';font-weight:800;font-size:20px;color:var(--mint);letter-spacing:.04em;display:flex;align-items:center;gap:10px;}
-  .gm-judge .prompt{font-family:'Inter';font-size:15px;color:var(--cream);line-height:1.5;padding:12px 16px;background:rgba(217,119,87,.08);border-left:3px solid var(--mint);border-radius:6px;}
-  .gm-judge .submit-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
-  .gm-judge .sub-cell{padding:10px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);text-align:center;font-family:'Urbanist';font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;transition:all .25s;}
-  .gm-judge .sub-cell.ok{background:rgba(122,210,122,.15);border-color:#7ad27a;color:#7ad27a;}
-  .gm-judge .results{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
-  .gm-judge .res{padding:14px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px;}
-  .gm-judge .res.win{background:linear-gradient(180deg,rgba(255,203,71,.18),rgba(255,255,255,.04));border-color:#ffcb47;box-shadow:0 0 16px rgba(255,203,71,.3);}
-  .gm-judge .res b{font-size:12px;letter-spacing:.12em;text-transform:uppercase;}
-  .gm-judge .res .score{font-family:'Urbanist';font-weight:800;font-size:32px;}
-  .gm-judge .res.win .score{color:#ffcb47;}
-  .gm-judge .res .just{font-size:10px;color:rgba(255,255,255,.6);line-height:1.4;}
-  .gm-judge .countdown{font-family:'Urbanist';font-weight:800;color:#ffcb47;text-align:center;font-size:14px;letter-spacing:.2em;}
+  /* FEED do Juiz */
+  .gm-feed{background:rgba(0,0,0,.35);border:1px solid rgba(255,203,71,.25);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:stretch;min-height:96px;max-height:130px;overflow:hidden;}
+  .gm-feed .ftitle{font-family:'Urbanist';font-weight:800;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#ffcb47;writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;padding:4px 0;display:flex;align-items:center;gap:6px;}
+  .gm-feed .fbody{flex:1;display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;}
+  .gm-feed .fitem{flex:0 0 280px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:4px;cursor:pointer;transition:transform .2s, border-color .2s;}
+  .gm-feed .fitem:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.2);}
+  .gm-feed .fitem.judging{border-color:#ffcb47;background:rgba(255,203,71,.06);}
+  .gm-feed .fitem.boosted{border-color:#7ad27a;background:rgba(122,210,122,.08);}
+  .gm-feed .fteam{font-family:'Urbanist';font-weight:800;font-size:11px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
+  .gm-feed .fprompt{font-size:11px;color:rgba(255,255,255,.7);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .gm-feed .fmeta{display:flex;justify-content:space-between;align-items:center;margin-top:2px;}
+  .gm-feed .fscore{font-family:'Urbanist';font-weight:800;font-size:16px;}
+  .gm-feed .fstatus{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:#ffcb47;display:flex;align-items:center;gap:4px;}
+  .gm-feed .fstatus.ok{color:#7ad27a;}
+  .gm-feed .fempty{flex:1;display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(255,255,255,.4);font-style:italic;}
 
   /* WINNER */
   .gm-winner{position:absolute;inset:0;background:rgba(14,15,12,.97);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:20;border-radius:14px;}
   .gm-winner.show{display:flex;animation:judgeIn .5s var(--ease);}
-  .gm-winner .crown{font-size:64px;animation:bouncy .6s ease-in-out infinite alternate;}
+  @keyframes judgeIn{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+  .gm-winner .crown{color:#ffcb47;animation:bouncy .6s ease-in-out infinite alternate;font-size:64px;line-height:1;}
   .gm-winner h2{font-family:'Urbanist';font-weight:800;font-size:52px;}
   .gm-winner p{color:var(--cream);font-family:'Inter';opacity:.8;}
   .confetti{position:absolute;width:8px;height:14px;top:-20px;animation:fall 3s linear infinite;}
   @keyframes fall{to{transform:translateY(800px) rotate(720deg);opacity:0;}}
+
+  /* MODAL DETALHE DA AVALIAÇÃO */
+  .gm-modal{position:absolute;inset:0;background:rgba(8,8,6,.86);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:40;padding:30px;}
+  .gm-modal.show{display:flex;animation:judgeIn .35s var(--ease);}
+  .gm-modal-card{background:#1c1d19;border:1px solid rgba(255,255,255,.12);border-radius:18px;max-width:760px;width:100%;max-height:100%;overflow-y:auto;padding:28px 32px;position:relative;box-shadow:0 30px 60px -10px rgba(0,0,0,.6);}
+  .gm-modal-x{position:absolute;top:14px;right:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--cream);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;line-height:1;}
+  .gm-modal-x:hover{background:rgba(255,255,255,.14);}
+  .gm-modal-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:16px;}
+  .gm-modal-team{font-family:'Urbanist';font-weight:800;font-size:24px;display:flex;align-items:center;gap:10px;}
+  .gm-modal-score{font-family:'Urbanist';font-weight:800;font-size:38px;line-height:1;}
+  .gm-modal-section{margin-bottom:16px;}
+  .gm-modal-section h5{font-family:'Urbanist';font-weight:700;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--mint);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+  .gm-modal-section p{font-size:14px;line-height:1.55;color:var(--cream);background:rgba(255,255,255,.04);border-left:3px solid var(--mint);padding:10px 14px;border-radius:6px;white-space:pre-wrap;}
+  .gm-modal-status{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;font-family:'Urbanist';font-weight:700;font-size:12px;letter-spacing:.15em;text-transform:uppercase;}
+  .gm-modal-status.boost{background:rgba(122,210,122,.15);color:#7ad27a;border:1px solid rgba(122,210,122,.4);}
+  .gm-modal-status.no{background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);}
+  .gm-modal-empty{font-style:italic;opacity:.6;}
   </style>
                               
 </head>
 <body>
 <div id="progress"></div>
 <div id="stage">
+
+<!-- ===== SPRITE de ÍCONES SVG (substitui emojis) ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-13h-7l1-7z"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4 5 5 0 0 1-4 4v2h3v2H9v-2h3v-2a5 5 0 0 1-4-4 4 4 0 0 1-4-4V5h3V3zm0 4H5v1a2 2 0 0 0 2 2V7zm10 0v3a2 2 0 0 0 2-2V7h-2z"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 3v18h2v-7h11l-2-4 2-4H7V3H5z"/></symbol>
+<symbol id="i-scales" viewBox="0 0 24 24"><path d="M11 2h2v3h6v2h-3.2l3 6.2c.1 2.3-1.6 3.8-3.8 3.8s-3.9-1.5-3.8-3.8L14.2 7H13v12h4v2H7v-2h4V7H9.8L12.8 13.2c.1 2.3-1.6 3.8-3.8 3.8S5.1 15.5 5.2 13.2L8.2 7H5V5h6V2zm5 6.5L14 13h4l-2-4.5zm-8 0L6 13h4L8 8.5z"/></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24"><path d="M5 18h14v2H5zm-2-9l4 3 5-7 5 7 4-3v9H3V9z"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><path d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm0 3v13h10V5H7zm5 14a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2z"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm-1 3v6l5 3 1-1.7-4-2.3V7h-2z"/></symbol>
+<symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M6 2h12v4l-4 6 4 6v4H6v-4l4-6-4-6V2z"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v2h-2V7zm0 4h2v6h-2v-6z"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M21 5v13a1 1 0 0 1-1 1h-6a2 2 0 0 0-2 2 2 2 0 0 0-2-2H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a3 3 0 0 1 3 3 3 3 0 0 1 3-3h5a1 1 0 0 1 1 1z"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10.6 13.4a4 4 0 0 1 0-5.6l3.6-3.6a4 4 0 1 1 5.6 5.6l-1.4 1.4-1.4-1.4 1.4-1.4a2 2 0 1 0-2.8-2.8L12 9.6a2 2 0 0 0 0 2.8zm2.8-2.8a4 4 0 0 1 0 5.6l-3.6 3.6a4 4 0 1 1-5.6-5.6l1.4-1.4 1.4 1.4-1.4 1.4a2 2 0 1 0 2.8 2.8L12 14.4a2 2 0 0 0 0-2.8z"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2L3 5v6c0 5 4 9 9 11 5-2 9-6 9-11V5l-9-3z"/></symbol>
+<symbol id="i-hands" viewBox="0 0 24 24"><path d="M3 13l4-4 3 3-4 4-3-3zm9-9l3 3-4 4-3-3 4-4zm5 5l4 4-3 3-4-4 3-3zm-5 5l3 3-4 4-3-3 4-4z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><path d="M10 2a8 8 0 1 1-5.3 14L1 19.7 2.3 21l3.7-3.7A8 8 0 0 1 10 2zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12z"/></symbol>
+<symbol id="i-life" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 5a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></symbol>
+<symbol id="i-money" viewBox="0 0 24 24"><path d="M2 6h20v12H2V6zm10 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM5 8a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h14a2 2 0 0 1 2-2v-4a2 2 0 0 1-2-2H5z"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M20.7 7l-3.7-3.7a1 1 0 0 0-1.4 0L3 16v5h5L20.7 8.4a1 1 0 0 0 0-1.4z"/></symbol>
+<symbol id="i-brain" viewBox="0 0 24 24"><path d="M8 3a3 3 0 0 0-3 3v.3A3 3 0 0 0 3 9a3 3 0 0 0 1.2 2.4A3 3 0 0 0 3 14a3 3 0 0 0 3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-1.5V5.5A3 3 0 0 0 9 4 3 3 0 0 0 8 3zm8 0a3 3 0 0 0-1 1 3 3 0 0 0-3 1.5v13A3 3 0 0 0 15 20a3 3 0 0 0 3-3 3 3 0 0 0 3-3 3 3 0 0 0-1.2-2.6A3 3 0 0 0 21 9a3 3 0 0 0-2-2.7V6a3 3 0 0 0-3-3z"/></symbol>
+<symbol id="i-grad" viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.9V17h2V9zM5 13.2V17c0 2 4 4 7 4s7-2 7-4v-3.8l-7 3.8z"/></symbol>
+<symbol id="i-galaxy" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1-7 17 7 7 0 0 0 12-5 7 7 0 0 0-5-12z"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3h2v18H3zm4 10h2v8H7zm4-6h2v14h-2zm4 3h2v11h-2zm4-7h2v18h-2z"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm0 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></symbol>
+<symbol id="i-tools" viewBox="0 0 24 24"><path d="M21 7l-4-4-4 4 1 1-8 8-1-1-4 4 4 4 4-4-1-1 8-8 1 1 4-4z"/></symbol>
+<symbol id="i-cycle" viewBox="0 0 24 24"><path d="M12 4V1L7 6l5 5V7a5 5 0 0 1 5 5h2a7 7 0 0 0-7-7zm0 13a5 5 0 0 1-5-5H5a7 7 0 0 0 11.5 5.4L19 20l-2-5h-5z"/></symbol>
+<symbol id="i-robot" viewBox="0 0 24 24"><path d="M9 2v2h6V2h2v2h1a3 3 0 0 1 3 3v3h2v6h-2v3a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-3H1v-6h2V7a3 3 0 0 1 3-3h1V2h2zm-1 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 6v2h6v-2H9z"/></symbol>
+<symbol id="i-memo" viewBox="0 0 24 24"><path d="M5 3h12l4 4v14H5V3zm2 2v14h12V8h-4V5H7zm2 4h6v2H9V9zm0 4h6v2H9v-2z"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2c1.6 0 3 .5 4.2 1.3-.8.8-2 1.3-3.2 1.3a3 3 0 0 0-3 3v1H5.3A8 8 0 0 1 12 4zm-7.7 9H8v2a3 3 0 0 0 3 3v1.7c0 .5.2 1 .5 1.3A8 8 0 0 1 4.3 13zm15 0a8 8 0 0 1-6 6.8c.4-.5.7-1 .7-1.8V16h2a2 2 0 0 0 2-2v-1h1.3z"/></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2a5 5 0 0 1-10 0H5z"/></symbol>
+<symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M10 3a2 2 0 0 1 4 0v2h5v5h-2a2 2 0 0 0 0 4h2v5h-5v-2a2 2 0 0 0-4 0v2H5v-5h2a2 2 0 0 0 0-4H5V5h5V3z"/></symbol>
+<symbol id="i-window" viewBox="0 0 24 24"><path d="M3 4h18v16H3V4zm2 4v10h14V8H5zm2-2h2v2H7V6z"/></symbol>
+<symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 2l2 7 7 2-7 2-2 7-2-7-7-2 7-2z"/></symbol>
+</defs></svg>
+
+
 
   <!-- ===================== SLIDE 1 — CAPA ===================== -->
   <section class="slide" id="s1">
@@ -534,7 +601,7 @@
       </div>
       <div class="cols" style="align-items:stretch;">
         <div class="panel" data-anim="up" style="--d:.35s;justify-content:flex-start;gap:16px;">
-          <div class="tc-head"><span class="ic">🧩</span><h3>Token</h3></div>
+          <div class="tc-head"><span class="ic"><svg class="ic"><use href="#i-puzzle"/></svg></span><h3>Token</h3></div>
           <p class="tc-text">O texto é quebrado em pedacinhos chamados <b>tokens</b> — uma palavra, parte de uma palavra ou um sinal de pontuação. É a unidade que o modelo realmente processa.</p>
           <div class="tc-chips">
             <span class="tok">comuni</span><span class="plus">+</span><span class="tok">cação</span>
@@ -543,7 +610,7 @@
           <div class="tc-why"><b>Por que importa:</b> custo, velocidade e os limites de uso são todos medidos em tokens.</div>
         </div>
         <div class="panel" data-anim="up" style="--d:.5s;justify-content:flex-start;gap:16px;">
-          <div class="tc-head"><span class="ic">🪟</span><h3>Contexto</h3></div>
+          <div class="tc-head"><span class="ic"><svg class="ic"><use href="#i-window"/></svg></span><h3>Contexto</h3></div>
           <p class="tc-text">É a “memória de trabalho” do modelo: tudo o que ele considera de uma vez — sua pergunta, a conversa e os documentos. Seu tamanho é a <b>janela de contexto</b>.</p>
           <div class="probs" style="max-width:none;margin:0;">
             <div class="prob"><span class="pl" style="width:118px;">Janela</span><span class="track"><span class="barfill" style="width:92%;--d:.7s;"></span></span><span class="pv">1M</span></div>
@@ -571,7 +638,7 @@
           <span class="tok">linguagem</span><span class="arrow">›</span>
           <span class="tok">é</span><span class="arrow">›</span>
           <span class="tok">a</span><span class="arrow">›</span>
-          <span class="tok pred">essência ✦</span>
+          <span class="tok pred">essência <svg class="ic"><use href="#i-sparkle"/></svg></span>
         </div>
         <p class="lead" data-anim="up" style="margin-top:26px;font-size:15px;max-width:680px;--d:.5s">Para cada posição, o modelo calcula uma <b>distribuição de probabilidade</b> sobre milhares de tokens possíveis e escolhe o mais coerente com o contexto:</p>
         <div class="probs">
@@ -605,9 +672,9 @@
           </div>
         </div>
         <div class="cards" style="gap:16px;">
-          <div class="card" data-anim="up" style="--d:.55s"><div class="num">📖</div><div><h3>Lê tudo de uma vez</h3><p>Analisa a frase inteira de uma só vez, não palavra por palavra.</p></div></div>
-          <div class="card" data-anim="up" style="--d:.7s"><div class="num">⚖️</div><div><h3>Pesa a relevância</h3><p>Decide quais palavras mais importam para entender cada termo.</p></div></div>
-          <div class="card" data-anim="up" style="--d:.85s"><div class="num">🔗</div><div><h3>Mantém o contexto</h3><p>Conecta palavras mesmo distantes — é a base de todos os LLMs.</p></div></div>
+          <div class="card" data-anim="up" style="--d:.55s"><div class="num"><svg class="ic"><use href="#i-book"/></svg></div><div><h3>Lê tudo de uma vez</h3><p>Analisa a frase inteira de uma só vez, não palavra por palavra.</p></div></div>
+          <div class="card" data-anim="up" style="--d:.7s"><div class="num"><svg class="ic"><use href="#i-scales"/></svg></div><div><h3>Pesa a relevância</h3><p>Decide quais palavras mais importam para entender cada termo.</p></div></div>
+          <div class="card" data-anim="up" style="--d:.85s"><div class="num"><svg class="ic"><use href="#i-link"/></svg></div><div><h3>Mantém o contexto</h3><p>Conecta palavras mesmo distantes — é a base de todos os LLMs.</p></div></div>
         </div>
       </div>
     </div>
@@ -626,8 +693,8 @@
       <div class="cols" style="align-items:center;">
         <div class="cards">
           <div class="card" data-anim="up" style="--d:.35s"><div class="num">2021</div><div><h3>A dissidência da OpenAI</h3><p>Dario e Daniela Amodei, ao lado de pesquisadores, deixam a OpenAI para fundar a Anthropic.</p></div></div>
-          <div class="card" data-anim="up" style="--d:.5s"><div class="num">🛡️</div><div><h3>Foco em segurança</h3><p>A motivação central foi priorizar a pesquisa em segurança e alinhamento de IA.</p></div></div>
-          <div class="card" data-anim="up" style="--d:.65s"><div class="num">⚖️</div><div><h3>Empresa de benefício público</h3><p>Estruturada para equilibrar impacto comercial e responsabilidade social.</p></div></div>
+          <div class="card" data-anim="up" style="--d:.5s"><div class="num"><svg class="ic"><use href="#i-shield"/></svg></div><div><h3>Foco em segurança</h3><p>A motivação central foi priorizar a pesquisa em segurança e alinhamento de IA.</p></div></div>
+          <div class="card" data-anim="up" style="--d:.65s"><div class="num"><svg class="ic"><use href="#i-scales"/></svg></div><div><h3>Empresa de benefício público</h3><p>Estruturada para equilibrar impacto comercial e responsabilidade social.</p></div></div>
         </div>
         <div class="panel" data-anim="scale" style="--d:.5s">
           <p style="font-size:24px;color:var(--ink);font-family:'Urbanist';font-weight:600;line-height:1.4;">“E se construíssemos uma IA poderosa <span class="accent">colocando a segurança em primeiro lugar?</span>”</p>
@@ -649,9 +716,9 @@
         <p class="sub" data-anim="up" style="--d:.22s">Três pilares orientam cada resposta — o princípio “HHH” da Anthropic.</p>
       </div>
       <div class="hhh">
-        <div class="h" data-anim="up" style="--d:.35s"><div class="ic">🤝</div><h3>Útil</h3><p>Compreende a real intenção do usuário e oferece respostas relevantes e completas.</p></div>
-        <div class="h" data-anim="up" style="--d:.5s"><div class="ic">🔍</div><h3>Honesto</h3><p>Evita inventar informações, reconhece incertezas e admite o que não sabe.</p></div>
-        <div class="h" data-anim="up" style="--d:.65s"><div class="ic">🛟</div><h3>Inócuo</h3><p>Recusa-se a produzir conteúdo prejudicial, perigoso ou antiético.</p></div>
+        <div class="h" data-anim="up" style="--d:.35s"><div class="ic"><svg class="ic"><use href="#i-hands"/></svg></div><h3>Útil</h3><p>Compreende a real intenção do usuário e oferece respostas relevantes e completas.</p></div>
+        <div class="h" data-anim="up" style="--d:.5s"><div class="ic"><svg class="ic"><use href="#i-search"/></svg></div><h3>Honesto</h3><p>Evita inventar informações, reconhece incertezas e admite o que não sabe.</p></div>
+        <div class="h" data-anim="up" style="--d:.65s"><div class="ic"><svg class="ic"><use href="#i-life"/></svg></div><h3>Inócuo</h3><p>Recusa-se a produzir conteúdo prejudicial, perigoso ou antiético.</p></div>
       </div>
     </div>
     <div class="sectiontag">Helpful · Honest · Harmless</div>
@@ -667,9 +734,9 @@
       </div>
       <div class="modelgrid">
         <div class="feature-list">
-          <div class="fl" data-anim="up" style="--d:.45s"><div class="tick">⚡</div><div><h3>Velocidade máxima</h3><p>Respostas quase instantâneas para tarefas em tempo real.</p></div></div>
-          <div class="fl" data-anim="up" style="--d:.58s"><div class="tick">💸</div><div><h3>Baixo custo</h3><p>O modelo mais econômico — ideal para grande volume de requisições.</p></div></div>
-          <div class="fl" data-anim="up" style="--d:.71s"><div class="tick">✍️</div><div><h3>Aplicações textuais rápidas</h3><p>Classificação, resumos curtos, moderação e atendimento automatizado.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.45s"><div class="tick"><svg class="ic"><use href="#i-bolt"/></svg></div><div><h3>Velocidade máxima</h3><p>Respostas quase instantâneas para tarefas em tempo real.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.58s"><div class="tick"><svg class="ic"><use href="#i-money"/></svg></div><div><h3>Baixo custo</h3><p>O modelo mais econômico — ideal para grande volume de requisições.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.71s"><div class="tick"><svg class="ic"><use href="#i-pencil"/></svg></div><div><h3>Aplicações textuais rápidas</h3><p>Classificação, resumos curtos, moderação e atendimento automatizado.</p></div></div>
         </div>
         <div class="model-visual">
           <div class="model-badge b-haiku" data-anim="scale" style="--d:.4s">
@@ -695,9 +762,9 @@
       </div>
       <div class="modelgrid">
         <div class="feature-list">
-          <div class="fl" data-anim="up" style="--d:.45s"><div class="tick">⚖️</div><div><h3>O equilíbrio perfeito</h3><p>Combina inteligência elevada com velocidade e custo acessíveis.</p></div></div>
-          <div class="fl" data-anim="up" style="--d:.58s"><div class="tick">🧠</div><div><h3>Raciocínio lógico avançado</h3><p>Resolve problemas em várias etapas com consistência.</p></div></div>
-          <div class="fl" data-anim="up" style="--d:.71s"><div class="tick">🎓</div><div><h3>Preferido na academia</h3><p>Ótimo para escrita, revisão e apoio à pesquisa no dia a dia.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.45s"><div class="tick"><svg class="ic"><use href="#i-scales"/></svg></div><div><h3>O equilíbrio perfeito</h3><p>Combina inteligência elevada com velocidade e custo acessíveis.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.58s"><div class="tick"><svg class="ic"><use href="#i-brain"/></svg></div><div><h3>Raciocínio lógico avançado</h3><p>Resolve problemas em várias etapas com consistência.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.71s"><div class="tick"><svg class="ic"><use href="#i-grad"/></svg></div><div><h3>Preferido na academia</h3><p>Ótimo para escrita, revisão e apoio à pesquisa no dia a dia.</p></div></div>
         </div>
         <div class="model-visual">
           <div class="model-badge b-sonnet" data-anim="scale" style="--d:.4s">
@@ -723,9 +790,9 @@
       </div>
       <div class="modelgrid">
         <div class="feature-list">
-          <div class="fl" data-anim="up" style="--d:.45s"><div class="tick">🌌</div><div><h3>Inteligência profunda</h3><p>O modelo Opus mais capaz para os problemas mais complexos.</p></div></div>
-          <div class="fl" data-anim="up" style="--d:.58s"><div class="tick">📊</div><div><h3>Análise de dados</h3><p>Interpreta grandes volumes de informação e raciocínio de longo alcance.</p></div></div>
-          <div class="fl" data-anim="up" style="--d:.71s"><div class="tick">✒️</div><div><h3>Redação de alto nível</h3><p>Textos longos, argumentativos e estilisticamente refinados.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.45s"><div class="tick"><svg class="ic"><use href="#i-galaxy"/></svg></div><div><h3>Inteligência profunda</h3><p>O modelo Opus mais capaz para os problemas mais complexos.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.58s"><div class="tick"><svg class="ic"><use href="#i-chart"/></svg></div><div><h3>Análise de dados</h3><p>Interpreta grandes volumes de informação e raciocínio de longo alcance.</p></div></div>
+          <div class="fl" data-anim="up" style="--d:.71s"><div class="tick"><svg class="ic"><use href="#i-pencil"/></svg></div><div><h3>Redação de alto nível</h3><p>Textos longos, argumentativos e estilisticamente refinados.</p></div></div>
         </div>
         <div class="model-visual">
           <div class="model-badge b-opus" data-anim="scale" style="--d:.4s">
@@ -776,13 +843,13 @@
         <p class="sub" data-anim="up" style="--d:.22s">Sistemas <b>autônomos</b> que não apenas respondem, mas planejam, usam ferramentas e executam tarefas para atingir um objetivo.</p>
       </div>
       <div class="agentflow">
-        <div class="ac" data-anim="up" style="--d:.4s"><div class="ic">🎯</div><h3>Define objetivos</h3><p>Recebe uma meta e a divide em etapas.</p></div>
+        <div class="ac" data-anim="up" style="--d:.4s"><div class="ic"><svg class="ic"><use href="#i-target"/></svg></div><h3>Define objetivos</h3><p>Recebe uma meta e a divide em etapas.</p></div>
         <div class="fl-arrow" data-anim="in" style="--d:.5s">→</div>
-        <div class="ac" data-anim="up" style="--d:.55s"><div class="ic">🛠️</div><h3>Usa ferramentas</h3><p>Busca na web, lê arquivos, executa código.</p></div>
+        <div class="ac" data-anim="up" style="--d:.55s"><div class="ic"><svg class="ic"><use href="#i-tools"/></svg></div><h3>Usa ferramentas</h3><p>Busca na web, lê arquivos, executa código.</p></div>
         <div class="fl-arrow" data-anim="in" style="--d:.65s">→</div>
-        <div class="ac" data-anim="up" style="--d:.7s"><div class="ic">🔄</div><h3>Toma decisões</h3><p>Avalia resultados e ajusta o caminho.</p></div>
+        <div class="ac" data-anim="up" style="--d:.7s"><div class="ic"><svg class="ic"><use href="#i-cycle"/></svg></div><h3>Toma decisões</h3><p>Avalia resultados e ajusta o caminho.</p></div>
         <div class="fl-arrow" data-anim="in" style="--d:.8s">→</div>
-        <div class="ac" data-anim="up" style="--d:.85s"><div class="ic">✅</div><h3>Entrega tarefas</h3><p>Conclui o trabalho com pouca supervisão.</p></div>
+        <div class="ac" data-anim="up" style="--d:.85s"><div class="ic"><svg class="ic"><use href="#i-check"/></svg></div><h3>Entrega tarefas</h3><p>Conclui o trabalho com pouca supervisão.</p></div>
       </div>
       <p class="agent-note" data-anim="up" style="--d:1s">Diferente de um chat, o agente <b>executa a tarefa do início ao fim</b> — repetindo o ciclo e pedindo ajuda só quando necessário.</p>
     </div>
@@ -800,7 +867,7 @@
       </div>
       <div class="vs">
         <div class="vcol chat" data-anim="up" style="--d:.4s">
-          <div class="colhead ch-chat">💬 IA de Chat</div>
+          <div class="colhead ch-chat"><svg class="ic"><use href="#i-chat"/></svg> IA de Chat</div>
           <div class="vrow">Responde a uma pergunta por vez</div>
           <div class="vrow">Reativo — espera o comando</div>
           <div class="vrow">Não acessa ferramentas externas</div>
@@ -816,7 +883,7 @@
           <div class="vlabel">exemplo</div>
         </div>
         <div class="vcol agent" data-anim="up" style="--d:.7s">
-          <div class="colhead ch-agent">🤖 Agente de IA</div>
+          <div class="colhead ch-agent"><svg class="ic"><use href="#i-robot"/></svg> Agente de IA</div>
           <div class="vrow">Executa tarefas de várias etapas</div>
           <div class="vrow">Autônomo — toma a iniciativa</div>
           <div class="vrow">Usa web, código, arquivos e APIs</div>
@@ -837,7 +904,7 @@
         <h1 class="title" data-anim="up" style="--d:.12s">Mesma tarefa, duas abordagens</h1>
       </div>
       <div class="task-banner" data-anim="up" style="--d:.28s">
-        <span class="tb-ic">📝</span>
+        <span class="tb-ic"><svg class="ic"><use href="#i-memo"/></svg></span>
         <div>
           <div class="tb-label">A tarefa</div>
           <p>“Pesquise as novidades de IA desta semana e escreva um e-mail de resumo para a equipe.”</p>
@@ -845,7 +912,7 @@
       </div>
       <div class="excols">
         <div class="excard chat" data-anim="up" style="--d:.45s">
-          <div class="eh">💬 IA de Chat</div>
+          <div class="eh"><svg class="ic"><use href="#i-chat"/></svg> IA de Chat</div>
           <ul>
             <li>Responde com um texto na própria tela, ali mesmo.</li>
             <li>Usa só o que já aprendeu — não acessa as notícias desta semana.</li>
@@ -854,7 +921,7 @@
           <div class="out"><b>Entrega:</b> um rascunho — o trabalho final fica com você.</div>
         </div>
         <div class="excard agent" data-anim="up" style="--d:.6s">
-          <div class="eh">🤖 Agente de IA</div>
+          <div class="eh"><svg class="ic"><use href="#i-robot"/></svg> Agente de IA</div>
           <ul>
             <li>Planeja sozinho as etapas da tarefa.</li>
             <li>Busca as notícias na web, em tempo real.</li>
@@ -914,9 +981,9 @@
           <p class="nlead" data-anim="up" style="--d:.45s">Restrições de exportação ao <b>Mythos 5</b> entram em pauta: o acesso ao modelo de fronteira passa a ser tratado como questão de <b>segurança nacional</b>.</p>
         </div>
         <div class="impact">
-          <div class="it" data-anim="up" style="--d:.55s"><h3>🌐 Tecnologia estratégica</h3><p>Modelos de ponta passam a ser vistos como ativos geopolíticos, à semelhança de semicondutores.</p></div>
-          <div class="it" data-anim="up" style="--d:.68s"><h3>⚖️ Tensão regulatória</h3><p>Equilíbrio entre inovação aberta e controle estatal sobre o acesso à IA avançada.</p></div>
-          <div class="it" data-anim="up" style="--d:.81s"><h3>🗣️ Impacto na linguagem</h3><p>Quem controla os modelos influencia quais línguas e discursos são amplificados.</p></div>
+          <div class="it" data-anim="up" style="--d:.55s"><h3><svg class="ic"><use href="#i-globe"/></svg> Tecnologia estratégica</h3><p>Modelos de ponta passam a ser vistos como ativos geopolíticos, à semelhança de semicondutores.</p></div>
+          <div class="it" data-anim="up" style="--d:.68s"><h3><svg class="ic"><use href="#i-scales"/></svg> Tensão regulatória</h3><p>Equilíbrio entre inovação aberta e controle estatal sobre o acesso à IA avançada.</p></div>
+          <div class="it" data-anim="up" style="--d:.81s"><h3><svg class="ic"><use href="#i-mic"/></svg> Impacto na linguagem</h3><p>Quem controla os modelos influencia quais línguas e discursos são amplificados.</p></div>
         </div>
       </div>
     </div>
@@ -941,33 +1008,60 @@
             <img id="gmQr" alt="QR Code" src=""/>
             <div class="gm-url" id="gmUrl">—</div>
           </div>
-          <div class="gm-help">📱 Escaneie o QR para entrar.<br>Host: <b>Enter</b> inicia · <b>R</b> reinicia</div>
+          <div class="gm-help"><svg class="ic"><use href="#i-phone"/></svg> Escaneie o QR para entrar.<br>1º a entrar vira <b>ADMIN</b> do grupo.<br>Host: <b>Enter</b> inicia · <b>R</b> reinicia</div>
         </aside>
 
-        <div class="gm-track" id="gmTrack">
-          <!-- lanes injected via JS -->
-          <div class="gm-judge" id="gmJudge">
-            <h3>⚖️ <span>Barreira do Alinhamento</span> · Juiz Claude</h3>
-            <div class="prompt" id="gmJudgePrompt">—</div>
-            <div class="countdown" id="gmJudgeCountdown">Aguardando respostas das equipes…</div>
-            <div class="submit-grid" id="gmSubmitGrid"></div>
-            <div class="results" id="gmJudgeResults" style="display:none;"></div>
+        <div class="gm-track-wrap">
+          <div class="gm-track" id="gmTrack">
+            <!-- lanes injected via JS -->
+            <div class="gm-winner" id="gmWinner">
+              <div class="crown"><svg class="ic" style="width:1em;height:1em"><use href="#i-crown"/></svg></div>
+              <h2 id="gmWinnerName">—</h2>
+              <p>vence a Corrida dos Agentes!</p>
+            </div>
           </div>
-          <div class="gm-winner" id="gmWinner">
-            <div class="crown">👑</div>
-            <h2 id="gmWinnerName">—</h2>
-            <p>vence a Corrida dos Agentes!</p>
+          <div class="gm-feed">
+            <div class="ftitle"><svg class="ic"><use href="#i-scales"/></svg> Juiz Claude</div>
+            <div class="fbody" id="gmFeed">
+              <div class="fempty">Aguardando equipes chegarem nas barreiras…</div>
+            </div>
           </div>
         </div>
 
         <aside class="gm-board">
-          <h4>🏆 Placar ao vivo</h4>
+          <h4><svg class="ic"><use href="#i-trophy"/></svg> Placar ao vivo</h4>
           <div id="gmRanks"></div>
         </aside>
+      </div>
+
+      <!-- MODAL: detalhe da avaliação -->
+      <div class="gm-modal" id="gmModal">
+        <div class="gm-modal-card">
+          <button class="gm-modal-x" id="gmModalX" aria-label="Fechar">×</button>
+          <div class="gm-modal-head">
+            <div class="gm-modal-team" id="gmmTeam">—</div>
+            <div class="gm-modal-score" id="gmmScore">—</div>
+          </div>
+          <div class="gm-modal-section">
+            <h5><svg class="ic"><use href="#i-memo"/></svg> Prompt do desafio</h5>
+            <p id="gmmPrompt">—</p>
+          </div>
+          <div class="gm-modal-section">
+            <h5><svg class="ic"><use href="#i-chat"/></svg> Resposta enviada pela equipe</h5>
+            <p id="gmmAnswer">—</p>
+          </div>
+          <div class="gm-modal-section">
+            <h5><svg class="ic"><use href="#i-scales"/></svg> Veredito do Claude</h5>
+            <p id="gmmJust">—</p>
+          </div>
+          <div id="gmmBoost"></div>
+        </div>
       </div>
     </div>
     <div class="pageno">— / —</div>
   </section>
+
+
 
 
 
@@ -978,7 +1072,7 @@
       <div class="kicker" data-anim="up">Síntese final</div>
       <h1 data-anim="up" style="--d:.2s">Obrigado!</h1>
       <p data-anim="up" style="--d:.4s">Do Teste de Turing aos agentes autônomos, o Claude representa uma ferramenta poderosa para a <b style="color:#E89B7D;font-weight:600">comunicação, a linguagem e a pesquisa</b> — desde que usada com olhar crítico.</p>
-      <div class="qa" data-anim="scale" style="--d:.6s">💬 Perguntas &amp; Respostas</div>
+      <div class="qa" data-anim="scale" style="--d:.6s"><svg class="ic"><use href="#i-chat"/></svg> Perguntas &amp; Respostas</div>
       <div class="thanks" data-anim="in" style="--d:.85s">UFG · Comunicação e Linguagem II · 2026</div>
     </div>
     <div class="pageno">16 / 16</div>
@@ -1030,48 +1124,80 @@
 <script>
 (function(){
   let TEAMS = [];
-  const track     = document.getElementById('gmTrack');
-  const judge     = document.getElementById('gmJudge');
-  const ranksEl   = document.getElementById('gmRanks');
-  const status    = document.getElementById('gmStatus');
-  const jPrompt   = document.getElementById('gmJudgePrompt');
-  const jCount    = document.getElementById('gmJudgeCountdown');
-  const jGrid     = document.getElementById('gmSubmitGrid');
-  const jResults  = document.getElementById('gmJudgeResults');
-  const winner    = document.getElementById('gmWinner');
-  const winnerNm  = document.getElementById('gmWinnerName');
+  let BARRIERS = [0.3, 0.55, 0.8];
+  const track   = document.getElementById('gmTrack');
+  const ranksEl = document.getElementById('gmRanks');
+  const status  = document.getElementById('gmStatus');
+  const winner  = document.getElementById('gmWinner');
+  const winnerNm= document.getElementById('gmWinnerName');
+  const feedEl  = document.getElementById('gmFeed');
 
-  let socket = null, deadline = 0, tInt = null;
+  // estado do feed: por equipe { state:'judging'|'done', prompt, score, justification, boosted, deadline }
+  const feed = {};
+  // histórico persistente de avaliações por equipe (última avaliação)
+  const history = {};
+  let socket = null;
+
+  // ----- MODAL -----
+  const modal    = document.getElementById('gmModal');
+  const mTeam    = document.getElementById('gmmTeam');
+  const mScore   = document.getElementById('gmmScore');
+  const mPrompt  = document.getElementById('gmmPrompt');
+  const mAnswer  = document.getElementById('gmmAnswer');
+  const mJust    = document.getElementById('gmmJust');
+  const mBoost   = document.getElementById('gmmBoost');
+  document.getElementById('gmModalX').onclick = ()=> modal.classList.remove('show');
+  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('show'); });
+
+  function openModal(teamId){
+    const h = history[teamId];
+    const team = TEAMS.find(t=>t.id===teamId);
+    if (!team) return;
+    mTeam.innerHTML = `<svg class="ic lg" style="color:${team.color}"><use href="#i-trophy"/></svg> <span style="color:${team.color}">${team.name}</span>`;
+    if (!h){
+      mScore.textContent = '—';
+      mPrompt.innerHTML  = '<span class="gm-modal-empty">Esta equipe ainda não passou por nenhuma barreira de avaliação.</span>';
+      mAnswer.innerHTML  = '<span class="gm-modal-empty">—</span>';
+      mJust.innerHTML    = '<span class="gm-modal-empty">—</span>';
+      mBoost.innerHTML   = '';
+    } else {
+      mScore.textContent = h.score + '/10';
+      mScore.style.color = h.boosted ? '#7ad27a' : team.color;
+      mPrompt.textContent  = h.prompt || '—';
+      mAnswer.textContent  = h.answer || '(sem resposta enviada)';
+      mJust.textContent    = h.justification || '—';
+      mBoost.innerHTML = h.boosted
+        ? '<div class="gm-modal-status boost"><svg class="ic"><use href="#i-bolt"/></svg> Recebeu BOOST de velocidade</div>'
+        : '<div class="gm-modal-status no">Sem boost (nota abaixo de 7)</div>';
+    }
+    modal.classList.add('show');
+  }
 
   function buildLanes(){
-    // remove lanes antigas
     track.querySelectorAll('.gm-lane').forEach(n => n.remove());
     ranksEl.innerHTML = '';
-    jGrid.innerHTML = '';
     TEAMS.forEach(t => {
+      const barriersHtml = BARRIERS.map((b,i)=>`<div class="barrier" data-bidx="${i}" style="left:${b*100}%"></div>`).join('');
       const lane = document.createElement('div');
       lane.className='gm-lane'; lane.dataset.team=t.id;
       lane.style.color = t.color;
       lane.innerHTML = `
-        <div class="bar" data-bar="${t.id}"></div>
         <div class="label" style="color:${t.color}">${t.name}</div>
-        <div class="barrier"></div>
-        <div class="finish"></div>
-        <div class="gm-robot" data-team="${t.id}"><div class="pixbot" style="--c:${t.color}"></div></div>`;
-      track.insertBefore(lane, judge);
+        <div class="race">
+          <div class="bar" data-bar="${t.id}"></div>
+          ${barriersHtml}
+          <div class="finish"></div>
+          <div class="gm-robot" data-team="${t.id}"><div class="pixbot" style="--c:${t.color}"></div></div>
+        </div>`;
+      track.insertBefore(lane, winner);
 
       const rk = document.createElement('div');
       rk.className='gm-rank'; rk.dataset.rank=t.id;
       rk.innerHTML = `<div class="pos">—</div>
         <div class="nm" style="color:${t.color}">${t.name}</div>
-        <div><div class="pct" data-pct="${t.id}">0%</div><div class="players" data-pl="${t.id}">0 jog</div></div>`;
+        <div><div class="pct" data-pct="${t.id}">0%</div><div class="players" data-pl="${t.id}">0 jog</div><div class="info-tag">ver detalhes</div></div>`;
+      rk.onclick = ()=> openModal(t.id);
       ranksEl.appendChild(rk);
-
-      const cell = document.createElement('div');
-      cell.className='sub-cell'; cell.dataset.sub=t.id;
-      cell.style.color = t.color;
-      cell.textContent = t.name + ' ⌛';
-      jGrid.appendChild(cell);
     });
   }
 
@@ -1090,43 +1216,31 @@
         `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=0&data=${encodeURIComponent(mobileUrl)}`;
     });
 
-    socket.on('state', renderState);
-
-    socket.on('judge:prompt', d => {
-      deadline = d.deadline;
-      jPrompt.textContent = d.prompt;
-      jResults.style.display='none'; jResults.innerHTML='';
-      jGrid.style.display='grid';
-      jGrid.querySelectorAll('.sub-cell').forEach(c => { c.classList.remove('ok'); c.textContent = c.textContent.replace('✓','⌛'); });
-      judge.classList.add('show');
-      startCountdown();
+    socket.on('state', s => {
+      if (s.barriers && s.barriers.length !== BARRIERS.length){
+        BARRIERS = s.barriers; buildLanes();
+      } else if (s.barriers){ BARRIERS = s.barriers; }
+      renderState(s);
     });
 
-    socket.on('team:answered', d => {
-      const cell = jGrid.querySelector(`[data-sub="${d.team}"]`);
-      if (!cell) return;
-      const t = TEAMS.find(x=>x.id===d.team);
-      cell.classList.add('ok');
-      cell.textContent = (t?t.name:d.team) + ' ✓';
+    socket.on('team:judging', d => {
+      feed[d.teamId] = { state:'judging', teamName:d.teamName, color:d.color, prompt:d.prompt, deadline:d.deadline };
+      renderFeed();
     });
-
-    socket.on('judge:evaluating', () => {
-      if (tInt) { clearInterval(tInt); tInt = null; }
-      jCount.textContent = '⚖️ Claude está avaliando as respostas…';
+    socket.on('team:evaluating', d => {
+      if (feed[d.teamId]) { feed[d.teamId].state = 'evaluating'; renderFeed(); }
     });
-
-    socket.on('judge:result', d => {
-      jGrid.style.display='none';
-      jResults.style.display='grid';
-      jCount.textContent = `🏆 ${d.winner} venceu o julgamento e ganhou BOOST!`;
-      jCount.style.color = d.winnerColor;
-      jResults.innerHTML = d.results.map(r =>
-        `<div class="res ${r.isWinner?'win':''}" style="border-color:${r.isWinner?'#ffcb47':r.color}33">
-           <b style="color:${r.color}">${r.team}</b>
-           <div class="score" style="color:${r.isWinner?'#ffcb47':r.color}">${r.score}<span style="font-size:14px;opacity:.5">/10</span></div>
-           <div class="just">${escapeHtml(r.justification||'')}</div>
-         </div>`).join('');
-      setTimeout(()=>{ judge.classList.remove('show'); jCount.style.color=''; }, 6500);
+    socket.on('team:judged', d => {
+      feed[d.teamId] = { state:'done', teamName:d.teamName, color:d.color, prompt:d.prompt, answer:d.answer, score:d.score, justification:d.justification, boosted:d.boosted };
+      // salva no histórico permanente para o modal
+      history[d.teamId] = { teamName:d.teamName, color:d.color, prompt:d.prompt, answer:d.answer, score:d.score, justification:d.justification, boosted:d.boosted };
+      const rk = document.querySelector(`.gm-rank[data-rank="${d.teamId}"]`);
+      if (rk) rk.classList.add('has-result');
+      renderFeed();
+      // auto-clear depois de 14s (apenas do feed; histórico persiste)
+      setTimeout(()=>{
+        if (feed[d.teamId] && feed[d.teamId].state==='done'){ delete feed[d.teamId]; renderFeed(); }
+      }, 14000);
     });
 
     socket.on('winner', d => {
@@ -1137,7 +1251,12 @@
     });
 
     socket.on('reset', () => {
-      winner.classList.remove('show'); judge.classList.remove('show');
+      winner.classList.remove('show');
+      Object.keys(feed).forEach(k => delete feed[k]);
+      Object.keys(history).forEach(k => delete history[k]);
+      document.querySelectorAll('.gm-rank').forEach(r => r.classList.remove('has-result'));
+      modal.classList.remove('show');
+      renderFeed();
       document.querySelectorAll('.confetti').forEach(c=>c.remove());
     });
   } else {
@@ -1148,28 +1267,44 @@
     if (!TEAMS.length) return;
     const phaseLabel = {
       lobby:   `${s.totalPlayers} jogador(es) · aguardando Enter`,
-      racing:  '🏁 Corrida em andamento',
-      judging: '⚖️ Barreira · respostas das equipes',
-      ended:   '🏆 Fim de jogo'
+      racing:  'Corrida em andamento',
+      ended:   'Fim de jogo'
     }[s.phase] || s.phase;
     status.textContent = phaseLabel;
     status.classList.toggle('live', s.phase === 'racing');
 
-    // posições / ranking
     const arr = TEAMS.map(t => ({...t, ...s.teams[t.id]}));
     arr.sort((a,b)=> b.progress - a.progress);
 
     arr.forEach((t, i) => {
       const lane = document.querySelector(`.gm-lane[data-team="${t.id}"]`);
-      const robot = lane && lane.querySelector('.gm-robot');
-      const bar = lane && lane.querySelector(`[data-bar="${t.id}"]`);
-      if (robot){
-        const laneW = lane.clientWidth - 46;
-        robot.style.left = (t.progress * laneW) + 'px';
+      if (!lane) return;
+      const race = lane.querySelector('.race');
+      const robot = lane.querySelector('.gm-robot');
+      const bar = lane.querySelector(`[data-bar="${t.id}"]`);
+      if (robot && race){
+        const raceW = race.clientWidth - 30;
+        robot.style.left = (t.progress * raceW) + 'px';
         robot.classList.toggle('boost', !!t.boost);
         robot.classList.toggle('atbarrier', !!t.atBarrier);
       }
       if (bar) bar.style.width = (t.progress * 100) + '%';
+
+      // marcar barreiras já cruzadas
+      lane.querySelectorAll('.barrier').forEach((bEl, idx)=>{
+        bEl.classList.toggle('done', idx < (t.nextBarrierIdx||0));
+      });
+
+      // badge "AVALIANDO" durante julgamento
+      let badge = race ? race.querySelector('.judgebadge') : null;
+      if (t.judging){
+        if (!badge && race){
+          badge = document.createElement('div');
+          badge.className='judgebadge';
+          badge.innerHTML = '<svg class="ic"><use href="#i-scales"/></svg> AVALIANDO';
+          race.appendChild(badge);
+        }
+      } else if (badge){ badge.remove(); }
 
       const rk = document.querySelector(`.gm-rank[data-rank="${t.id}"]`);
       if (rk){
@@ -1179,19 +1314,45 @@
         const pl  = rk.querySelector(`[data-pl="${t.id}"]`);
         if (pct) pct.textContent = Math.round(t.progress*100)+'%';
         if (pl)  pl.textContent  = t.players + ' jog';
-        // reorder visually
         ranksEl.appendChild(rk);
       }
     });
   }
 
-  function startCountdown(){
-    if (tInt) clearInterval(tInt);
-    tInt = setInterval(()=>{
-      const s = Math.max(0, Math.floor((deadline - Date.now())/1000));
-      jCount.textContent = `⏱️ Equipes têm ${s}s para colar a resposta da sua IA…`;
-      if (s <= 0){ clearInterval(tInt); tInt = null; }
-    }, 250);
+  function renderFeed(){
+    const keys = Object.keys(feed);
+    if (!keys.length){ feedEl.innerHTML = '<div class="fempty">Aguardando equipes chegarem nas barreiras…</div>'; return; }
+    feedEl.innerHTML = keys.map(k => {
+      const f = feed[k];
+      if (f.state === 'done'){
+        const cls = f.boosted ? 'boosted' : '';
+        const scolor = f.boosted ? '#7ad27a' : f.color;
+        const boostBadge = f.boosted
+          ? '<div class="fstatus ok"><svg class="ic"><use href="#i-bolt"/></svg> BOOST</div>'
+          : '<div class="fstatus ok"><svg class="ic"><use href="#i-check"/></svg> sem boost</div>';
+        return `<div class="fitem ${cls}" data-team="${k}">
+          <div class="fteam" style="color:${f.color}"><svg class="ic"><use href="#i-info"/></svg> ${f.teamName} <span style="opacity:.5;font-weight:500;margin-left:auto">clique p/ detalhes</span></div>
+          <div class="fprompt">"${escapeHtml(f.prompt||'')}"</div>
+          <div class="fmeta">
+            <div class="fscore" style="color:${scolor}">${f.score}/10</div>
+            ${boostBadge}
+          </div>
+          <div class="fprompt" style="opacity:.6">${escapeHtml(f.justification||'')}</div>
+        </div>`;
+      }
+      const stxt = f.state==='evaluating'
+        ? '<svg class="ic"><use href="#i-scales"/></svg> Claude avaliando…'
+        : '<svg class="ic"><use href="#i-hourglass"/></svg> Aguardando admin…';
+      return `<div class="fitem judging" data-team="${k}">
+        <div class="fteam" style="color:${f.color}">${f.teamName}</div>
+        <div class="fprompt">"${escapeHtml(f.prompt||'')}"</div>
+        <div class="fmeta"><div class="fstatus">${stxt}</div></div>
+      </div>`;
+    }).join('');
+    // bind clicks
+    feedEl.querySelectorAll('.fitem[data-team]').forEach(el=>{
+      el.onclick = ()=> { if (history[el.dataset.team]) openModal(el.dataset.team); };
+    });
   }
 
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -1209,15 +1370,16 @@
     }
   }
 
-  // Atalhos do host APENAS quando o slide do jogo está ativo
   document.addEventListener('keydown', e=>{
     const active = document.querySelector('.slide.active');
     if (!active || active.id !== 's-game' || !socket) return;
+    if (e.key === 'Escape' && modal.classList.contains('show')) { modal.classList.remove('show'); return; }
     if (e.key === 'Enter')              { e.preventDefault(); socket.emit('host:start'); }
     else if (e.key.toLowerCase() === 'r'){ e.preventDefault(); socket.emit('host:reset'); }
   });
 })();
 </script>
+
 </body>
 </html>
 

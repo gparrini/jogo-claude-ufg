@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: corrida-agentes
+    env: node
+    plan: free
+    rootDir: game
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false       # você cola o valor no painel do Render
+      - key: CLAUDE_MODEL
+        value: claude-3-5-sonnet-20241022
+      # PUBLIC_URL é preenchido automaticamente pelo Render (RENDER_EXTERNAL_URL)
+      - key: PUBLIC_URL
+        fromService:
+          type: web
+          name: corrida-agentes
+          property: host

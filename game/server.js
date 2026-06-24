@@ -1,6 +1,8 @@
 // ============================================================
 //  CORRIDA DOS AGENTES — Servidor Socket.io
-//  Claude (Anthropic) atua como JUIZ das respostas das equipes.
+//  - Claude (Anthropic) atua como JUIZ das respostas das equipes.
+//  - Cada equipe tem 1 ADMIN (1º a entrar) que responde os desafios.
+//  - 3 barreiras de avaliação ao longo da corrida.
 // ============================================================
 const path = require('path');
 const http = require('http');
@@ -16,7 +18,6 @@ app.use(express.static(__dirname));
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'apresentação_atualizada.html')));
 
 // ===================== EQUIPES =====================
-// Claude foi REMOVIDO da disputa — ele é o juiz.
 const TEAMS = [
   { id: 'manus',      name: 'Manus',       color: '#8b5cf6' },
   { id: 'zotero',     name: 'Zotero',      color: '#cc2936' },
@@ -26,26 +27,28 @@ const TEAMS = [
 ];
 
 // ===================== CONFIG =====================
-const FINISH_STEPS    = 350;
-const BARRIER_AT      = 0.5;
-const BOOST_DURATION  = 3500;
-const BOOST_MULT      = 2.6;
+const FINISH_STEPS    = 520;                 // pista mais longa
+const BARRIERS        = [0.28, 0.55, 0.82];  // 3 obstáculos
+const BOOST_DURATION  = 4000;
+const BOOST_MULT      = 2.4;
 const TICK_MS         = 80;
-const SUBMIT_TIMEOUT  = 90_000;  // tempo p/ equipes enviarem resposta
-const PUBLIC_URL      = process.env.PUBLIC_URL || '';
+const SUBMIT_TIMEOUT  = 120_000;
+const SCORE_FOR_BOOST = 7;
+const PUBLIC_URL      = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || '';
 const ANTHROPIC_KEY   = process.env.ANTHROPIC_API_KEY || '';
 const CLAUDE_MODEL    = process.env.CLAUDE_MODEL || 'claude-3-5-sonnet-20241022';
 
-// ===================== CENÁRIOS (PROMPTS DA BARREIRA) =====================
-// >>> EDITE AQUI <<< — cada cenário traz UM prompt que será dado às equipes.
-// As equipes colam o prompt na IA delas, copiam a resposta e enviam pelo celular.
-// Claude lê as respostas e dá uma nota de 0 a 10. A maior nota ganha BOOST.
+// ===================== PROMPTS DAS BARREIRAS =====================
 const PROMPTS = [
   'Defenda em 3 frases, com argumentos científicos, por que o céu é azul.',
   'Explique em até 80 palavras o que é "alucinação" em modelos de linguagem e dê um exemplo.',
   'Escreva um parágrafo persuasivo (máx. 100 palavras) sobre a importância da leitura crítica de fontes na era da IA.',
   'Em 4 linhas, diferencie "informação", "conhecimento" e "sabedoria" com exemplos do cotidiano.',
   'Resuma em 60 palavras o conceito de "Teste de Turing" e por que ele ainda é debatido hoje.',
+  'Em 80 palavras, defenda por que IA generativa NÃO substitui o pensamento crítico humano na pesquisa acadêmica.',
+  'Explique em 3 frases a diferença entre um Chatbot e um Agente de IA, com um exemplo prático.',
+  'Argumente em até 70 palavras: vieses em LLMs são um problema técnico ou social? Justifique.',
+  'Em 60 palavras, descreva um caso de uso responsável do Claude na sala de aula de Comunicação.',
 ];
 
 // ===================== ESTADO =====================
@@ -53,159 +56,184 @@ const teams = Object.fromEntries(TEAMS.map(t => [t.id, freshTeam(t)]));
 function freshTeam(t){
   return {
     id: t.id, name: t.name, color: t.color,
-    players: 0, steps: 0, progress: 0,
-    boost: false, atBarrier: false, crossedBarrier: false,
-    answer: '', score: null, justification: '',
+    players: 0,
+    adminSocketId: null,
+    steps: 0, progress: 0,
+    boost: false,
+    judging: false,
+    atBarrier: false,
+    nextBarrierIdx: 0,
+    prompt: '',
+    deadline: 0,
+    answer: '',
+    score: null,
+    justification: '',
+    lastResult: null, // {score, justification, boosted}
   };
 }
-let phase = 'lobby';      // lobby | racing | judging | ended
-let currentPrompt = '';
-let submitDeadline = 0;
+let phase = 'lobby';      // lobby | racing | ended
 let lastTouch = {};
+let raceWinner = null;
+
+function publicTeams(){
+  // não expor sockets crus
+  const out = {};
+  for (const id in teams){
+    const t = teams[id];
+    out[id] = {
+      id: t.id, name: t.name, color: t.color,
+      players: t.players,
+      progress: t.progress,
+      boost: t.boost,
+      judging: t.judging,
+      atBarrier: t.atBarrier,
+      nextBarrierIdx: t.nextBarrierIdx,
+      hasAdmin: !!t.adminSocketId,
+      prompt: t.judging ? t.prompt : '',
+      deadline: t.judging ? t.deadline : 0,
+      answered: !!t.answer,
+      lastResult: t.lastResult,
+    };
+  }
+  return out;
+}
 
 function broadcastState(){
   io.emit('state', {
-    phase, currentPrompt, submitDeadline,
+    phase,
+    barriers: BARRIERS,
     totalPlayers: Object.values(teams).reduce((a,t)=>a+t.players,0),
-    teams,
+    teams: publicTeams(),
   });
 }
 
 function resetGame(){
   for (const t of TEAMS){
     const keep = teams[t.id].players;
-    teams[t.id] = { ...freshTeam(t), players: keep };
+    const admin = teams[t.id].adminSocketId;
+    teams[t.id] = { ...freshTeam(t), players: keep, adminSocketId: admin };
   }
   phase = 'lobby';
-  currentPrompt = '';
+  raceWinner = null;
   io.emit('reset');
   broadcastState();
 }
 
 function startGame(){
   if (phase !== 'lobby' && phase !== 'ended') return;
-  // limpa progresso mas preserva jogadores
   for (const t of TEAMS){
     const keep = teams[t.id].players;
-    teams[t.id] = { ...freshTeam(t), players: keep };
+    const admin = teams[t.id].adminSocketId;
+    teams[t.id] = { ...freshTeam(t), players: keep, adminSocketId: admin };
   }
   phase = 'racing';
+  raceWinner = null;
   broadcastState();
 }
 
 // ===================== LOOP =====================
 setInterval(()=>{
   if (phase !== 'racing') return;
-  let finisher = null;
   for (const t of TEAMS){
     const tm = teams[t.id];
-    if (tm.atBarrier) { tm.steps = 0; continue; }
-    let mult = tm.boost ? BOOST_MULT : 1;
+    if (tm.judging) { tm.steps = 0; continue; }
+    const mult = tm.boost ? BOOST_MULT : 1;
     const gained = (tm.steps * mult) / FINISH_STEPS;
     tm.progress = Math.min(1, tm.progress + gained);
     tm.steps = 0;
-    if (!tm.crossedBarrier && tm.progress >= BARRIER_AT){
-      tm.progress = BARRIER_AT;
-      tm.atBarrier = true;
+
+    const nextB = BARRIERS[tm.nextBarrierIdx];
+    if (nextB !== undefined && tm.progress >= nextB){
+      tm.progress = nextB;
+      startJudgingForTeam(tm);
     }
-    if (tm.progress >= 1 && !finisher) finisher = tm;
-  }
-
-  // todos chegaram na barreira? inicia julgamento
-  if (TEAMS.every(t => teams[t.id].atBarrier || teams[t.id].crossedBarrier) &&
-      TEAMS.some(t => teams[t.id].atBarrier)){
-    startJudging();
-  }
-
-  if (finisher){
-    phase = 'ended';
-    io.emit('winner', { team: finisher.name, color: finisher.color });
+    if (tm.progress >= 1 && !raceWinner){
+      raceWinner = tm;
+      phase = 'ended';
+      io.emit('winner', { team: tm.name, color: tm.color });
+    }
   }
   broadcastState();
 }, TICK_MS);
 
-// ===================== JULGAMENTO =====================
-function startJudging(){
-  phase = 'judging';
-  currentPrompt = PROMPTS[Math.floor(Math.random()*PROMPTS.length)];
-  submitDeadline = Date.now() + SUBMIT_TIMEOUT;
-  for (const t of TEAMS){
-    if (teams[t.id].atBarrier){
-      teams[t.id].answer = '';
-      teams[t.id].score = null;
-      teams[t.id].justification = '';
-    }
+// ===================== JULGAMENTO POR EQUIPE =====================
+function startJudgingForTeam(tm){
+  tm.judging = true;
+  tm.atBarrier = true;
+  tm.prompt = PROMPTS[Math.floor(Math.random()*PROMPTS.length)];
+  tm.deadline = Date.now() + SUBMIT_TIMEOUT;
+  tm.answer = '';
+  tm.score = null;
+  tm.justification = '';
+  // tag único para este julgamento (evita timeouts antigos disparando no próximo barreira)
+  const myBarrier = tm.nextBarrierIdx;
+  tm.judgeToken = (tm.judgeToken || 0) + 1;
+  const myToken = tm.judgeToken;
+
+  console.log(`[judge] ▶ ${tm.name} barreira #${myBarrier+1} | admin=${tm.adminSocketId || '(nenhum!)'}`);
+
+  // notifica admin com prompt
+  if (tm.adminSocketId){
+    io.to(tm.adminSocketId).emit('judge:prompt', {
+      teamId: tm.id, prompt: tm.prompt, deadline: tm.deadline
+    });
   }
-  io.emit('judge:prompt', { prompt: currentPrompt, deadline: submitDeadline });
-  broadcastState();
-
-  // timeout p/ avaliação automática
-  setTimeout(()=>{ if (phase === 'judging') evaluateAnswers(); }, SUBMIT_TIMEOUT + 200);
-}
-
-function maybeEvaluate(){
-  const pending = TEAMS.filter(t => teams[t.id].atBarrier && !teams[t.id].answer.trim());
-  if (pending.length === 0) evaluateAnswers();
-}
-
-async function evaluateAnswers(){
-  if (phase !== 'judging') return;
-  const competing = TEAMS.filter(t => teams[t.id].atBarrier);
-  io.emit('judge:evaluating');
-
-  let scored;
-  try {
-    scored = await scoreWithClaude(currentPrompt, competing.map(t => ({
-      id: t.id, name: t.name, answer: teams[t.id].answer || '(sem resposta)'
-    })));
-  } catch (err) {
-    console.error('[Claude] erro:', err.message);
-    // fallback: pontuação heurística pelo tamanho/conteúdo
-    scored = competing.map(t => ({
-      id: t.id,
-      score: teams[t.id].answer.trim() ? Math.min(10, 3 + Math.floor(teams[t.id].answer.length/40)) : 0,
-      justification: 'Avaliação local (Claude indisponível).'
-    }));
-  }
-
-  let best = null;
-  for (const s of scored){
-    teams[s.id].score = s.score;
-    teams[s.id].justification = s.justification;
-    if (!best || s.score > best.score) best = { id: s.id, score: s.score };
-  }
-
-  // libera todas as equipes da barreira
-  for (const t of competing){
-    teams[t.id].atBarrier = false;
-    teams[t.id].crossedBarrier = true;
-  }
-  // BOOST para a melhor (apenas a maior nota)
-  if (best){
-    teams[best.id].boost = true;
-    setTimeout(()=>{ teams[best.id].boost = false; broadcastState(); }, BOOST_DURATION);
-  }
-
-  io.emit('judge:result', {
-    prompt: currentPrompt,
-    winner: best ? teams[best.id].name : '—',
-    winnerColor: best ? teams[best.id].color : '#fff',
-    results: scored.map(s => ({
-      team: teams[s.id].name, color: teams[s.id].color,
-      answer: teams[s.id].answer, score: s.score, justification: s.justification,
-      isWinner: best && s.id === best.id,
-    })).sort((a,b)=> b.score - a.score),
+  // notifica todos do telão / não-admins
+  io.emit('team:judging', {
+    teamId: tm.id, teamName: tm.name, color: tm.color,
+    prompt: tm.prompt, deadline: tm.deadline,
   });
 
-  phase = 'racing';
+  // timeout — só dispara se ainda for o MESMO julgamento
+  setTimeout(()=>{
+    if (tm.judging && tm.judgeToken === myToken){
+      console.log(`[judge] ⏰ timeout ${tm.name} barreira #${myBarrier+1}`);
+      evaluateTeam(tm);
+    }
+  }, SUBMIT_TIMEOUT + 200);
+}
+
+async function evaluateTeam(tm){
+  if (!tm.judging) return;
+  tm.judging = false; // trava reentrada
+  io.emit('team:evaluating', { teamId: tm.id, teamName: tm.name });
+
+  let score = 0, justification = '';
+  try {
+    const r = await scoreWithClaude(tm.prompt, [{ id: tm.id, name: tm.name, answer: tm.answer || '(sem resposta)' }]);
+    score = r[0].score;
+    justification = r[0].justification;
+  } catch (err){
+    console.error('[Claude] erro:', err.message);
+    score = tm.answer.trim() ? Math.min(10, 3 + Math.floor(tm.answer.length/50)) : 0;
+    justification = 'Avaliação local (Claude indisponível).';
+  }
+  tm.score = score;
+  tm.justification = justification;
+  tm.atBarrier = false;
+  tm.nextBarrierIdx += 1;
+
+  const boosted = score >= SCORE_FOR_BOOST;
+  if (boosted){
+    tm.boost = true;
+    setTimeout(()=>{ tm.boost = false; broadcastState(); }, BOOST_DURATION);
+  }
+  tm.lastResult = { score, justification, boosted, prompt: tm.prompt };
+
+  io.emit('team:judged', {
+    teamId: tm.id, teamName: tm.name, color: tm.color,
+    score, justification, boosted,
+    answer: tm.answer,
+    prompt: tm.prompt,
+  });
   broadcastState();
 }
 
 // ===================== CLAUDE API =====================
 async function scoreWithClaude(prompt, entries){
   if (!ANTHROPIC_KEY) throw new Error('ANTHROPIC_API_KEY ausente');
-  const sys = `Você é um juiz imparcial de uma competição entre IAs. Receberá UM prompt e várias respostas de equipes. Para cada equipe, atribua uma nota INTEIRA de 0 a 10 (10 = excelente; 0 = vazio/incorreto) e uma justificativa curta em português (até 20 palavras). Responda APENAS em JSON puro no formato: {"scores":[{"id":"<id>","score":<int>,"justification":"<texto>"}]}.`;
-  const user = `PROMPT DADO ÀS EQUIPES:\n"${prompt}"\n\nRESPOSTAS:\n` +
+  const sys = `Você é um juiz imparcial em uma competição entre IAs. Receberá UM prompt e uma ou mais respostas de equipes. Para cada equipe, atribua uma nota INTEIRA de 0 a 10 (10 = excelente; 0 = vazio/incorreto) avaliando: aderência ao pedido, clareza, correção e profundidade. Justifique brevemente em português (até 20 palavras). Responda APENAS JSON puro: {"scores":[{"id":"<id>","score":<int>,"justification":"<texto>"}]}.`;
+  const user = `PROMPT:\n"${prompt}"\n\nRESPOSTAS:\n` +
     entries.map(e => `--- id: ${e.id} (${e.name}) ---\n${e.answer}`).join('\n\n');
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -216,9 +244,7 @@ async function scoreWithClaude(prompt, entries){
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: CLAUDE_MODEL,
-      max_tokens: 600,
-      system: sys,
+      model: CLAUDE_MODEL, max_tokens: 500, system: sys,
       messages: [{ role:'user', content: user }],
     }),
   });
@@ -235,6 +261,25 @@ async function scoreWithClaude(prompt, entries){
   }));
 }
 
+// ===================== ADMIN HELPERS =====================
+function promoteAdminIfNeeded(teamId){
+  const tm = teams[teamId];
+  if (!tm) return;
+  if (tm.adminSocketId && io.sockets.sockets.get(tm.adminSocketId)) return;
+  // procurar outro socket dessa equipe
+  let newAdmin = null;
+  for (const [sid, s] of io.sockets.sockets){
+    if (s.data && s.data.team === teamId){ newAdmin = sid; break; }
+  }
+  tm.adminSocketId = newAdmin;
+  if (newAdmin){
+    io.to(newAdmin).emit('you:admin', { team: teamId });
+    if (tm.judging){
+      io.to(newAdmin).emit('judge:prompt', { teamId, prompt: tm.prompt, deadline: tm.deadline });
+    }
+  }
+}
+
 // ===================== SOCKETS =====================
 io.on('connection', socket => {
   socket.emit('config', { publicUrl: PUBLIC_URL, teams: TEAMS, claudeReady: !!ANTHROPIC_KEY });
@@ -247,32 +292,66 @@ io.on('connection', socket => {
     if (!teams[teamId]) return;
     socket.data.team = teamId;
     teams[teamId].players++;
-    socket.emit('player:joined', { team: teamId });
+    // primeiro a entrar vira admin
+    let isAdmin = false;
+    if (!teams[teamId].adminSocketId){
+      teams[teamId].adminSocketId = socket.id;
+      isAdmin = true;
+    } else if (teams[teamId].adminSocketId === socket.id){
+      isAdmin = true;
+    }
+    socket.data.isAdmin = isAdmin;
+    socket.emit('player:joined', { team: teamId, isAdmin });
+    // se já está em julgamento e este é o admin, manda o prompt
+    if (isAdmin && teams[teamId].judging){
+      socket.emit('judge:prompt', { teamId, prompt: teams[teamId].prompt, deadline: teams[teamId].deadline });
+    }
     broadcastState();
   });
 
   socket.on('player:tap', (side) => {
     if (phase !== 'racing') return;
     const t = socket.data.team;
-    if (!t || !teams[t] || teams[t].atBarrier) return;
+    if (!t || !teams[t] || teams[t].judging) return;
     if (lastTouch[socket.id] === side) return;
     lastTouch[socket.id] = side;
     teams[t].steps += 1;
   });
 
   socket.on('player:answer', (text) => {
-    if (phase !== 'judging') return;
     const t = socket.data.team;
-    if (!t || !teams[t] || !teams[t].atBarrier) return;
-    teams[t].answer = String(text || '').slice(0, 2000);
+    if (!t || !teams[t]){
+      socket.emit('answer:rejected', { reason: 'sem-equipe' });
+      return;
+    }
+    const tm = teams[t];
+    if (!tm.judging){
+      console.log(`[answer] ✗ ${tm.name}: recebido fora de julgamento`);
+      socket.emit('answer:rejected', { reason: 'fora-julgamento' });
+      return;
+    }
+    // se o socket que mandou não é o admin atual, promove-o (recupera após queda/refresh)
+    if (tm.adminSocketId !== socket.id){
+      console.log(`[answer] ⚠ ${tm.name}: socket não-admin enviou resposta — promovendo`);
+      tm.adminSocketId = socket.id;
+      socket.data.isAdmin = true;
+      socket.emit('you:admin', { team: t });
+    }
+    console.log(`[answer] ✓ ${tm.name}: ${String(text||'').length} chars`);
+    tm.answer = String(text || '').slice(0, 3000);
     io.emit('team:answered', { team: t });
-    broadcastState();
-    maybeEvaluate();
+    evaluateTeam(tm);
   });
 
   socket.on('disconnect', () => {
     const t = socket.data.team;
-    if (t && teams[t]) teams[t].players = Math.max(0, teams[t].players - 1);
+    if (t && teams[t]){
+      teams[t].players = Math.max(0, teams[t].players - 1);
+      if (teams[t].adminSocketId === socket.id){
+        teams[t].adminSocketId = null;
+        promoteAdminIfNeeded(t);
+      }
+    }
     delete lastTouch[socket.id];
     broadcastState();
   });

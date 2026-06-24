@@ -10,11 +10,14 @@
   },
   "dependencies": {
     "express": "^4.19.2",
-    "socket.io": "^4.7.5"
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
     "localtunnel": "^2.0.2"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }
