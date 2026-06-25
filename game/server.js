@@ -35,6 +35,11 @@ const BOOST_MULT      = 2.4;
 const TICK_MS         = 80;
 const SUBMIT_TIMEOUT  = 120_000;
 const SCORE_FOR_BOOST = 7;
+// Janela de tolerância pra reconexão (ex.: admin saiu pra colar o prompt na
+// IA em outro app e o navegador/SO suspendeu a aba, derrubando o socket).
+// Enquanto essa janela não expira, o lugar (e o cargo de ADMIN, se for o caso)
+// fica reservado pra essa mesma pessoa — ninguém é promovido no lugar dela.
+const DISCONNECT_GRACE_MS = parseInt(process.env.DISCONNECT_GRACE_MS || '90000', 10);
 const ANTHROPIC_KEY   = process.env.ANTHROPIC_API_KEY || '';
 const CLAUDE_MODEL    = process.env.CLAUDE_MODEL || 'claude-sonnet-4-5';
 
@@ -76,6 +81,7 @@ function freshTeam(t){
     id: t.id, name: t.name, color: t.color,
     players: 0,
     adminSocketId: null,
+    adminPlayerId: null, // identidade persistente do admin (sobrevive a reconexões)
     steps: 0, progress: 0,
     boost: false,
     judging: false,
@@ -110,7 +116,7 @@ function publicTeams(){
       evaluating: t.evaluating,
       atBarrier: t.atBarrier,
       nextBarrierIdx: t.nextBarrierIdx,
-      hasAdmin: !!t.adminSocketId,
+      hasAdmin: !!t.adminPlayerId,
       prompt: t.judging ? t.prompt : '',
       deadline: t.judging ? t.deadline : 0,
       answered: !!t.answer,
@@ -134,7 +140,8 @@ function resetGame(){
   for (const t of TEAMS){
     const keep = teams[t.id].players;
     const admin = teams[t.id].adminSocketId;
-    teams[t.id] = { ...freshTeam(t), players: keep, adminSocketId: admin };
+    const adminPid = teams[t.id].adminPlayerId;
+    teams[t.id] = { ...freshTeam(t), players: keep, adminSocketId: admin, adminPlayerId: adminPid };
   }
   phase = 'lobby';
   raceWinner = null;
@@ -148,7 +155,8 @@ function startGame(){
   for (const t of TEAMS){
     const keep = teams[t.id].players;
     const admin = teams[t.id].adminSocketId;
-    teams[t.id] = { ...freshTeam(t), players: keep, adminSocketId: admin };
+    const adminPid = teams[t.id].adminPlayerId;
+    teams[t.id] = { ...freshTeam(t), players: keep, adminSocketId: admin, adminPlayerId: adminPid };
   }
   phase = 'racing';
   raceWinner = null;
@@ -315,40 +323,97 @@ async function scoreWithClaude(prompt, entries){
 }
 
 // ===================== ADMIN HELPERS =====================
+const pendingLeaves = new Map(); // playerId -> { timeout, teamId }
+
+// Só promove um novo admin quando NÃO há mais ninguém "reservando" o cargo
+// (ou seja, o admin anterior realmente foi embora e a janela de tolerância
+// já expirou — ver handleSocketDrop).
 function promoteAdminIfNeeded(teamId){
   const tm = teams[teamId];
   if (!tm) return;
-  if (tm.adminSocketId && io.sockets.sockets.get(tm.adminSocketId)) return;
-  // procurar outro socket dessa equipe
+  if (tm.adminPlayerId) return; // lugar ainda reservado (mesmo que offline)
+  // procurar outro socket conectado dessa equipe
   let newAdmin = null;
-  for (const [sid, s] of io.sockets.sockets){
-    if (s.data && s.data.team === teamId){ newAdmin = sid; break; }
+  for (const [, s] of io.sockets.sockets){
+    if (s.data && s.data.team === teamId){ newAdmin = s; break; }
   }
-  tm.adminSocketId = newAdmin;
-  if (newAdmin){
-    io.to(newAdmin).emit('you:admin', { team: teamId });
-    if (tm.judging && !tm.answer){
-      io.to(newAdmin).emit('judge:prompt', {
-        teamId, prompt: tm.prompt, deadline: tm.deadline,
-        barrierIdx: tm.nextBarrierIdx, judgeToken: tm.judgeToken,
-      });
-    }
+  if (!newAdmin){ tm.adminSocketId = null; return; }
+  tm.adminSocketId = newAdmin.id;
+  tm.adminPlayerId = newAdmin.data.playerId || null;
+  newAdmin.data.isAdmin = true;
+  io.to(newAdmin.id).emit('you:admin', { team: teamId });
+  if (tm.judging && !tm.answer){
+    io.to(newAdmin.id).emit('judge:prompt', {
+      teamId, prompt: tm.prompt, deadline: tm.deadline,
+      barrierIdx: tm.nextBarrierIdx, judgeToken: tm.judgeToken,
+    });
   }
 }
 
-// Remove o socket da equipe atual: desconta jogador, libera admin e delega.
-// Usado ao desconectar, ao trocar de equipe e ao sair para o lobby.
+// Remove o socket da equipe AGORA: desconta jogador, libera admin e delega.
+// Usado para saída INTENCIONAL — trocar de equipe ou apertar "sair pro lobby".
+// Não tem tolerância porque o próprio usuário pediu pra saída.
 function leaveTeam(socket){
   const t = socket.data.team;
+  const pid = socket.data.playerId;
+  if (pid && pendingLeaves.has(pid)){
+    clearTimeout(pendingLeaves.get(pid).timeout);
+    pendingLeaves.delete(pid);
+  }
   if (t && teams[t]){
     teams[t].players = Math.max(0, teams[t].players - 1);
-    const wasAdmin = teams[t].adminSocketId === socket.id;
-    if (wasAdmin) teams[t].adminSocketId = null;
+    const wasAdmin = teams[t].adminSocketId === socket.id || (pid && teams[t].adminPlayerId === pid);
+    if (wasAdmin){ teams[t].adminSocketId = null; teams[t].adminPlayerId = null; }
     socket.data.team = null;
     socket.data.isAdmin = false;
     if (wasAdmin) promoteAdminIfNeeded(t);
   }
   delete lastTouch[socket.id];
+}
+
+// O socket CAIU (refresh, perda de sinal, app foi pra background e o SO/
+// navegador suspendeu a aba — exatamente o que acontece quando alguém troca
+// de app pra colar o prompt na IA). Em vez de já tirar a pessoa da equipe e
+// passar o cargo de admin pra outro alguém, damos uma janela de tolerância
+// (DISCONNECT_GRACE_MS). Se a mesma pessoa (mesmo playerId) reconectar dentro
+// desse prazo, ela recupera o lugar e o cargo de admin normalmente. Só depois
+// que o prazo expira sem ela voltar é que o lugar é liberado de fato.
+function handleSocketDrop(socket){
+  const t = socket.data.team;
+  const pid = socket.data.playerId;
+  delete lastTouch[socket.id];
+  if (!t || !teams[t]) return;
+
+  const tm = teams[t];
+  // Tira o socket "ao vivo" do admin (ninguém pode mandar mensagem pra um
+  // socket morto), mas NÃO libera adminPlayerId — o lugar continua reservado.
+  if (tm.adminSocketId === socket.id) tm.adminSocketId = null;
+
+  if (!pid){
+    // Cliente antigo, sem identidade persistente — não há como saber se ele
+    // volta, então cai pro comportamento direto (sai já).
+    leaveTeam(socket);
+    broadcastState();
+    return;
+  }
+
+  const prev = pendingLeaves.get(pid);
+  if (prev) clearTimeout(prev.timeout);
+
+  const timeout = setTimeout(()=>{
+    pendingLeaves.delete(pid);
+    const tm2 = teams[t];
+    if (!tm2) return;
+    tm2.players = Math.max(0, tm2.players - 1);
+    if (tm2.adminPlayerId === pid){
+      tm2.adminPlayerId = null;
+      promoteAdminIfNeeded(t);
+    }
+    broadcastState();
+  }, DISCONNECT_GRACE_MS);
+
+  pendingLeaves.set(pid, { timeout, teamId: t });
+  broadcastState();
 }
 
 // ===================== SOCKETS =====================
@@ -359,8 +424,36 @@ io.on('connection', socket => {
   socket.on('host:start', () => startGame());
   socket.on('host:reset', () => resetGame());
 
-  socket.on('player:join', (teamId) => {
+  socket.on('player:join', (payload) => {
+    const teamId = (payload && typeof payload === 'object') ? payload.team : payload;
+    const playerId = (payload && typeof payload === 'object' && payload.playerId)
+      ? String(payload.playerId).slice(0, 64) : null;
     if (!teams[teamId]) return;
+    if (playerId) socket.data.playerId = playerId;
+
+    // Reconectando dentro da janela de tolerância (ex.: voltou de consultar a
+    // IA em outro app): recupera o lugar e, se era admin, recupera o cargo —
+    // sem contar jogador a mais nem perder o cargo pra outra pessoa.
+    const pending = playerId ? pendingLeaves.get(playerId) : null;
+    if (pending && pending.teamId === teamId){
+      clearTimeout(pending.timeout);
+      pendingLeaves.delete(playerId);
+      socket.data.team = teamId;
+      const tm = teams[teamId];
+      const isAdmin = tm.adminPlayerId === playerId;
+      if (isAdmin) tm.adminSocketId = socket.id;
+      socket.data.isAdmin = isAdmin;
+      socket.emit('player:joined', { team: teamId, isAdmin });
+      if (isAdmin && tm.judging && !tm.answer){
+        socket.emit('judge:prompt', {
+          teamId, prompt: tm.prompt, deadline: tm.deadline,
+          barrierIdx: tm.nextBarrierIdx, judgeToken: tm.judgeToken,
+        });
+      }
+      broadcastState();
+      return;
+    }
+
     // já está nesta equipe: apenas reconfirma, sem contar de novo
     if (socket.data.team === teamId){
       socket.emit('player:joined', { team: teamId, isAdmin: !!socket.data.isAdmin });
@@ -372,10 +465,12 @@ io.on('connection', socket => {
     teams[teamId].players++;
     // primeiro a entrar vira admin
     let isAdmin = false;
-    if (!teams[teamId].adminSocketId){
+    if (!teams[teamId].adminPlayerId){
       teams[teamId].adminSocketId = socket.id;
+      teams[teamId].adminPlayerId = playerId;
       isAdmin = true;
-    } else if (teams[teamId].adminSocketId === socket.id){
+    } else if (playerId && teams[teamId].adminPlayerId === playerId){
+      teams[teamId].adminSocketId = socket.id;
       isAdmin = true;
     }
     socket.data.isAdmin = isAdmin;
@@ -423,6 +518,7 @@ io.on('connection', socket => {
     if (tm.adminSocketId !== socket.id){
       console.log(`[answer] ⚠ ${tm.name}: socket não-admin enviou resposta — promovendo`);
       tm.adminSocketId = socket.id;
+      tm.adminPlayerId = socket.data.playerId || tm.adminPlayerId;
       socket.data.isAdmin = true;
       socket.emit('you:admin', { team: t });
     }
@@ -432,15 +528,17 @@ io.on('connection', socket => {
     evaluateTeam(tm);
   });
 
-  // sair para o lobby (botão "Trocar equipe" no celular)
+  // sair para o lobby (botão "Trocar equipe" no celular) — saída intencional, sem tolerância
   socket.on('player:leave', () => {
     leaveTeam(socket);
     broadcastState();
   });
 
+  // O socket caiu (refresh, perda de sinal, app foi pra background...).
+  // Não sabemos se foi de propósito ou só uma queda momentânea, então damos
+  // uma janela de tolerância antes de liberar o lugar/admin de fato.
   socket.on('disconnect', () => {
-    leaveTeam(socket);
-    broadcastState();
+    handleSocketDrop(socket);
   });
 });
 

@@ -180,12 +180,26 @@
   let TEAMS=[], myTeam=null, isAdmin=false, phase='lobby', deadline=0, timerInt=null;
   let activeJudgeToken = null, activeBarrierIdx = null;
   try { myTeam = localStorage.getItem('cda_team') || null; } catch(e){}
+  // Identidade persistente do jogador — sobrevive a quedas/reconexões de
+  // socket (ex.: saiu pra colar o prompt na IA e o navegador suspendeu a
+  // aba). Sem isso, o servidor não tem como saber que quem voltou é a
+  // mesma pessoa que tinha o cargo de ADMIN.
+  let myPlayerId = null;
+  try {
+    myPlayerId = localStorage.getItem('cda_pid');
+    if (!myPlayerId){
+      myPlayerId = 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2);
+      localStorage.setItem('cda_pid', myPlayerId);
+    }
+  } catch(e){
+    if (!myPlayerId) myPlayerId = 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2);
+  }
   const socket = io({ reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500 });
 
   socket.on('connect', ()=> {
     lobbyStatus.textContent = myTeam ? 'Reconectado — reentrando na equipe…' : 'Conectado — escolha uma equipe';
     // Reentra automaticamente após reconexão (ex.: voltou de outro app/aba)
-    if (myTeam) socket.emit('player:join', myTeam);
+    if (myTeam) socket.emit('player:join', { team: myTeam, playerId: myPlayerId });
   });
   socket.on('disconnect', ()=> lobbyStatus.textContent = 'Desconectado, reconectando…');
 
@@ -197,7 +211,7 @@
       el.className='team'; el.dataset.team=t.id;
       el.style.borderColor = t.color; el.style.color = t.color;
       el.innerHTML = `<div>${t.name}</div><div class="count" data-count="${t.id}">0 jogador(es)</div>`;
-      el.onclick = ()=> socket.emit('player:join', t.id);
+      el.onclick = ()=> socket.emit('player:join', { team: t.id, playerId: myPlayerId });
       grid.appendChild(el);
     });
   });
