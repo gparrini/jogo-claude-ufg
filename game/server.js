@@ -280,6 +280,21 @@ function promoteAdminIfNeeded(teamId){
   }
 }
 
+// Remove o socket da equipe atual: desconta jogador, libera admin e delega.
+// Usado ao desconectar, ao trocar de equipe e ao sair para o lobby.
+function leaveTeam(socket){
+  const t = socket.data.team;
+  if (t && teams[t]){
+    teams[t].players = Math.max(0, teams[t].players - 1);
+    const wasAdmin = teams[t].adminSocketId === socket.id;
+    if (wasAdmin) teams[t].adminSocketId = null;
+    socket.data.team = null;
+    socket.data.isAdmin = false;
+    if (wasAdmin) promoteAdminIfNeeded(t);
+  }
+  delete lastTouch[socket.id];
+}
+
 // ===================== SOCKETS =====================
 io.on('connection', socket => {
   socket.emit('config', { publicUrl: PUBLIC_URL, teams: TEAMS, claudeReady: !!ANTHROPIC_KEY });
@@ -290,6 +305,13 @@ io.on('connection', socket => {
 
   socket.on('player:join', (teamId) => {
     if (!teams[teamId]) return;
+    // já está nesta equipe: apenas reconfirma, sem contar de novo
+    if (socket.data.team === teamId){
+      socket.emit('player:joined', { team: teamId, isAdmin: !!socket.data.isAdmin });
+      return;
+    }
+    // trocando de equipe: sai da anterior antes (corrige a contagem)
+    if (socket.data.team && socket.data.team !== teamId) leaveTeam(socket);
     socket.data.team = teamId;
     teams[teamId].players++;
     // primeiro a entrar vira admin
@@ -343,16 +365,14 @@ io.on('connection', socket => {
     evaluateTeam(tm);
   });
 
+  // sair para o lobby (botão "Trocar equipe" no celular)
+  socket.on('player:leave', () => {
+    leaveTeam(socket);
+    broadcastState();
+  });
+
   socket.on('disconnect', () => {
-    const t = socket.data.team;
-    if (t && teams[t]){
-      teams[t].players = Math.max(0, teams[t].players - 1);
-      if (teams[t].adminSocketId === socket.id){
-        teams[t].adminSocketId = null;
-        promoteAdminIfNeeded(t);
-      }
-    }
-    delete lastTouch[socket.id];
+    leaveTeam(socket);
     broadcastState();
   });
 });

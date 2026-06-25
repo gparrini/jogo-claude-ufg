@@ -31,8 +31,15 @@
   .team .count{font-size:11px;color:var(--soft);font-weight:500;margin-top:6px;}
 
   #controller{padding:12px;gap:10px;}
-  .bar{display:flex;justify-content:space-between;align-items:center;padding:4px 6px;font-size:13px;color:var(--soft);}
+  .bar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 6px;font-size:13px;color:var(--soft);}
   .bar b{color:var(--ink);}
+  .switch-btn{
+    flex:none;background:rgba(255,255,255,.06);color:var(--soft);
+    border:1px solid rgba(255,255,255,.14);border-radius:8px;
+    padding:6px 10px;font-size:11px;font-weight:700;letter-spacing:.02em;
+    font-family:inherit;cursor:pointer;white-space:nowrap;
+  }
+  .switch-btn:active{transform:scale(.94);background:rgba(255,255,255,.12);}
   .role{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint);font-weight:800;}
   .pads{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .pad{
@@ -106,6 +113,7 @@
   <div class="bar">
     <span>Equipe: <b id="myTeam">—</b> <span class="role" id="myRole"></span></span>
     <span id="phaseLabel">Aguardando início…</span>
+    <button id="switchTeam" class="switch-btn" type="button">⇄ Trocar</button>
   </div>
   <div id="waitOverlay" class="wait-overlay" style="display:none">
     ⚖️ Barreira do Alinhamento<br>
@@ -332,6 +340,20 @@
   }
   // Quando o socket reconecta, reentra na equipe e tenta reenviar resposta pendente
   socket.on('player:joined', ()=> setTimeout(flushPendingAnswer, 100));
+
+  // Trocar de equipe: sai da atual e volta ao lobby para escolher outra
+  $('switchTeam').onclick = ()=>{
+    if (myTeam) socket.emit('player:leave');
+    try { localStorage.removeItem('cda_team'); } catch(e){}
+    myTeam = null; isAdmin = false;
+    myRole.textContent = '';
+    if (timerInt){ clearInterval(timerInt); timerInt = null; }
+    awaitingJudgement = false; pendingAnswer = null;
+    waitOverlay.style.display = 'none'; padsWrap.style.display = 'grid';
+    lobbyStatus.textContent = 'Escolha uma equipe';
+    show('lobby');
+    if (navigator.vibrate) navigator.vibrate(15);
+  };
 
   jSend.onclick = ()=>{
     const txt = jAnswer.value.trim();
