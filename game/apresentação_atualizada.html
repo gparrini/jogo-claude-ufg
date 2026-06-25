@@ -497,6 +497,24 @@
   .gm-modal-status.boost{background:rgba(122,210,122,.15);color:#7ad27a;border:1px solid rgba(122,210,122,.4);}
   .gm-modal-status.no{background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);}
   .gm-modal-empty{font-style:italic;opacity:.6;}
+
+  /* HISTÓRICO completo */
+  .gm-histbtn{margin-top:10px;background:rgba(255,203,71,.12);border:1px solid rgba(255,203,71,.35);color:#ffcb47;font-family:'Urbanist';font-weight:700;font-size:11px;letter-spacing:.18em;text-transform:uppercase;padding:9px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;transition:background .2s, transform .15s;}
+  .gm-histbtn:hover{background:rgba(255,203,71,.22);transform:translateY(-1px);}
+  .gm-histbtn .cnt{background:#ffcb47;color:#1c1d19;padding:2px 7px;border-radius:999px;font-size:10px;}
+  .gm-hist-list{display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto;padding-right:6px;}
+  .gm-hist-item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-left:3px solid var(--c);border-radius:10px;padding:12px 14px;cursor:pointer;transition:transform .15s, border-color .2s, background .2s;}
+  .gm-hist-item:hover{transform:translateX(2px);background:rgba(255,255,255,.07);}
+  .gm-hist-item.boosted{background:rgba(122,210,122,.06);}
+  .gm-hist-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;}
+  .gm-hist-team{font-family:'Urbanist';font-weight:800;font-size:13px;letter-spacing:.05em;color:var(--c);display:flex;align-items:center;gap:8px;}
+  .gm-hist-barrier{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.5);background:rgba(255,255,255,.05);padding:2px 7px;border-radius:4px;}
+  .gm-hist-score{font-family:'Urbanist';font-weight:800;font-size:18px;}
+  .gm-hist-score.ok{color:#7ad27a;}
+  .gm-hist-prompt{font-size:11.5px;color:rgba(255,255,255,.7);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px;}
+  .gm-hist-just{font-size:11px;color:rgba(255,255,255,.55);font-style:italic;line-height:1.4;}
+  .gm-hist-time{font-size:9.5px;color:rgba(255,255,255,.35);font-family:'Inter';}
+  .gm-hist-empty{text-align:center;padding:40px 20px;color:rgba(255,255,255,.4);font-style:italic;}
   </style>
                               
 </head>
@@ -1009,6 +1027,7 @@
             <div class="gm-url" id="gmUrl">—</div>
           </div>
           <div class="gm-help"><svg class="ic"><use href="#i-phone"/></svg> Escaneie o QR para entrar.<br>1º a entrar vira <b>ADMIN</b> do grupo.<br>Host: <b>Enter</b> inicia · <b>R</b> reinicia</div>
+          <div class="gm-help" style="margin-top:8px;font-size:11px;opacity:.65"><svg class="ic"><use href="#i-info"/></svg> Clique em uma equipe no <b>Placar</b> para ver o histórico completo de prompts, respostas e avaliações.</div>
         </aside>
 
         <div class="gm-track-wrap">
@@ -1034,27 +1053,15 @@
         </aside>
       </div>
 
-      <!-- MODAL: detalhe da avaliação -->
+      <!-- MODAL: histórico de avaliações da equipe -->
       <div class="gm-modal" id="gmModal">
         <div class="gm-modal-card">
           <button class="gm-modal-x" id="gmModalX" aria-label="Fechar">×</button>
           <div class="gm-modal-head">
             <div class="gm-modal-team" id="gmmTeam">—</div>
-            <div class="gm-modal-score" id="gmmScore">—</div>
+            <div class="gm-modal-score" id="gmmCount" style="font-size:18px;opacity:.7">0 avaliações</div>
           </div>
-          <div class="gm-modal-section">
-            <h5><svg class="ic"><use href="#i-memo"/></svg> Prompt do desafio</h5>
-            <p id="gmmPrompt">—</p>
-          </div>
-          <div class="gm-modal-section">
-            <h5><svg class="ic"><use href="#i-chat"/></svg> Resposta enviada pela equipe</h5>
-            <p id="gmmAnswer">—</p>
-          </div>
-          <div class="gm-modal-section">
-            <h5><svg class="ic"><use href="#i-scales"/></svg> Veredito do Claude</h5>
-            <p id="gmmJust">—</p>
-          </div>
-          <div id="gmmBoost"></div>
+          <div class="gm-hist-list" id="gmmList"></div>
         </div>
       </div>
     </div>
@@ -1134,41 +1141,58 @@
 
   // estado do feed: por equipe { state:'judging'|'done', prompt, score, justification, boosted, deadline }
   const feed = {};
-  // histórico persistente de avaliações por equipe (última avaliação)
+  // histórico persistente: { teamId: ultimaAvaliacao } para modal de detalhe
   const history = {};
+  // histórico COMPLETO (todas as avaliações da sessão), vindo do servidor
+  let fullHistory = [];
   let socket = null;
 
-  // ----- MODAL -----
+  // ----- MODAL: histórico por equipe -----
   const modal    = document.getElementById('gmModal');
   const mTeam    = document.getElementById('gmmTeam');
-  const mScore   = document.getElementById('gmmScore');
-  const mPrompt  = document.getElementById('gmmPrompt');
-  const mAnswer  = document.getElementById('gmmAnswer');
-  const mJust    = document.getElementById('gmmJust');
-  const mBoost   = document.getElementById('gmmBoost');
+  const mCount   = document.getElementById('gmmCount');
+  const mList    = document.getElementById('gmmList');
   document.getElementById('gmModalX').onclick = ()=> modal.classList.remove('show');
   modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('show'); });
 
   function openModal(teamId){
-    const h = history[teamId];
     const team = TEAMS.find(t=>t.id===teamId);
     if (!team) return;
+    modal.dataset.team = teamId;
+    const entries = fullHistory
+      .filter(h => h.teamId === teamId)
+      .sort((a,b)=> b.at - a.at);
     mTeam.innerHTML = `<svg class="ic lg" style="color:${team.color}"><use href="#i-trophy"/></svg> <span style="color:${team.color}">${team.name}</span>`;
-    if (!h){
-      mScore.textContent = '—';
-      mPrompt.innerHTML  = '<span class="gm-modal-empty">Esta equipe ainda não passou por nenhuma barreira de avaliação.</span>';
-      mAnswer.innerHTML  = '<span class="gm-modal-empty">—</span>';
-      mJust.innerHTML    = '<span class="gm-modal-empty">—</span>';
-      mBoost.innerHTML   = '';
+    mCount.textContent = entries.length + (entries.length === 1 ? ' avaliação' : ' avaliações');
+    if (!entries.length){
+      mList.innerHTML = '<div class="gm-hist-empty">Esta equipe ainda não passou por nenhuma barreira de avaliação.</div>';
     } else {
-      mScore.textContent = h.score + '/10';
-      mScore.style.color = h.boosted ? '#7ad27a' : team.color;
-      mPrompt.textContent  = h.prompt || '—';
-      mAnswer.textContent  = h.answer || '(sem resposta enviada)';
-      mJust.textContent    = h.justification || '—';
-      mBoost.innerHTML = h.boosted
-        ? '<div class="gm-modal-status boost"><svg class="ic"><use href="#i-bolt"/></svg> Recebeu BOOST de velocidade</div>'
-        : '<div class="gm-modal-status no">Sem boost (nota abaixo de 7)</div>';
+      mList.innerHTML = entries.map(h => {
+        const t = new Date(h.at);
+        const hh = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+        const boostTag = h.boosted
+          ? '<span class="gm-hist-barrier" style="color:#7ad27a;background:rgba(122,210,122,.1)"><svg class="ic" style="width:.85em;height:.85em"><use href="#i-bolt"/></svg> BOOST</span>'
+          : '<span class="gm-hist-barrier">sem boost</span>';
+        return `<div class="gm-hist-item ${h.boosted?'boosted':''}" style="--c:${team.color}">
+          <div class="gm-hist-head">
+            <div class="gm-hist-team">Barreira ${h.barrierIdx+1} ${boostTag}</div>
+            <div class="gm-hist-score ${h.boosted?'ok':''}" style="${h.boosted?'':'color:'+team.color}">${h.score}/10</div>
+          </div>
+          <div style="margin-top:8px">
+            <div style="font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--mint);margin-bottom:4px;font-family:'Urbanist';font-weight:700"><svg class="ic" style="width:.9em;height:.9em"><use href="#i-memo"/></svg> Prompt</div>
+            <div class="gm-hist-prompt" style="-webkit-line-clamp:3;font-size:12px">"${escapeHtml(h.prompt||'')}"</div>
+          </div>
+          <div style="margin-top:8px">
+            <div style="font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--mint);margin-bottom:4px;font-family:'Urbanist';font-weight:700"><svg class="ic" style="width:.9em;height:.9em"><use href="#i-chat"/></svg> Resposta da equipe</div>
+            <div class="gm-hist-prompt" style="-webkit-line-clamp:4;font-size:12px;color:rgba(255,255,255,.78)">${escapeHtml(h.answer||'(sem resposta)')}</div>
+          </div>
+          <div style="margin-top:8px">
+            <div style="font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--mint);margin-bottom:4px;font-family:'Urbanist';font-weight:700"><svg class="ic" style="width:.9em;height:.9em"><use href="#i-scales"/></svg> Veredito do Claude</div>
+            <div class="gm-hist-just" style="font-size:12px">${escapeHtml(h.justification||'—')}</div>
+          </div>
+          <div class="gm-hist-time" style="margin-top:8px">${hh}</div>
+        </div>`;
+      }).join('');
     }
     modal.classList.add('show');
   }
@@ -1220,6 +1244,14 @@
       if (s.barriers && s.barriers.length !== BARRIERS.length){
         BARRIERS = s.barriers; buildLanes();
       } else if (s.barriers){ BARRIERS = s.barriers; }
+      if (Array.isArray(s.history)){
+        fullHistory = s.history;
+        if (modal.classList.contains('show')){
+          // re-render modal aberto se for da equipe atual
+          const tid = modal.dataset.team;
+          if (tid) openModal(tid);
+        }
+      }
       renderState(s);
     });
 
@@ -1254,6 +1286,7 @@
       winner.classList.remove('show');
       Object.keys(feed).forEach(k => delete feed[k]);
       Object.keys(history).forEach(k => delete history[k]);
+      fullHistory = [];
       document.querySelectorAll('.gm-rank').forEach(r => r.classList.remove('has-result'));
       modal.classList.remove('show');
       renderFeed();
@@ -1373,7 +1406,9 @@
   document.addEventListener('keydown', e=>{
     const active = document.querySelector('.slide.active');
     if (!active || active.id !== 's-game' || !socket) return;
-    if (e.key === 'Escape' && modal.classList.contains('show')) { modal.classList.remove('show'); return; }
+    if (e.key === 'Escape'){
+      if (modal.classList.contains('show')) { modal.classList.remove('show'); return; }
+    }
     if (e.key === 'Enter')              { e.preventDefault(); socket.emit('host:start'); }
     else if (e.key.toLowerCase() === 'r'){ e.preventDefault(); socket.emit('host:reset'); }
   });

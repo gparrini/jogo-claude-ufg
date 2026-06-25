@@ -178,6 +178,7 @@
   };
 
   let TEAMS=[], myTeam=null, isAdmin=false, phase='lobby', deadline=0, timerInt=null;
+  let activeJudgeToken = null, activeBarrierIdx = null;
   try { myTeam = localStorage.getItem('cda_team') || null; } catch(e){}
   const socket = io({ reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 500 });
 
@@ -241,7 +242,7 @@
     if (!me) return;
 
     // Fallback: se saiu do julgamento mas a UI travou em "avaliando", destrava
-    if (!me.judging && awaitingJudgement){
+    if (!me.judging && !me.evaluating && awaitingJudgement){
       awaitingJudgement = false;
       jSend.disabled = false;
       jSend.classList.remove('sent');
@@ -266,10 +267,17 @@
     }
 
     // racing
-    if (me.judging){
+    if (me.evaluating){
+      show('controller');
+      if (timerInt){ clearInterval(timerInt); timerInt=null; }
+      phaseLabel.textContent = '⏳ Claude avaliando…';
+      ctrlStatus.textContent = 'Resposta enviada! Aguarde a nota aparecer aqui.';
+      ctrlStatus.className = 'status judge';
+      waitOverlay.style.display='none'; padsWrap.style.display='grid';
+    } else if (me.judging){
       // admin: tela de juiz
       if (isAdmin){
-        show('judge');
+        if (!awaitingJudgement) show('judge');
       } else {
         show('controller');
         phaseLabel.textContent = '⚖️ Barreira';
@@ -290,8 +298,15 @@
   socket.on('judge:prompt', d=>{
     if (d.teamId !== myTeam) return;
     if (!isAdmin) return;
+    // Se já enviamos uma resposta, ignore qualquer prompt reenviado/atrasado.
+    // Isso evita a tela trocar para outro prompt enquanto o Claude avalia.
+    if (awaitingJudgement) return;
+    if (activeJudgeToken && d.judgeToken && Number(d.judgeToken) < Number(activeJudgeToken)) return;
+    activeJudgeToken = d.judgeToken || null;
+    activeBarrierIdx = Number.isFinite(Number(d.barrierIdx)) ? Number(d.barrierIdx) : null;
     jPrompt.textContent = d.prompt;
-    jAnswer.value = '';
+    // Preserva o texto se o usuário já estava digitando para o mesmo prompt
+    if (!awaitingJudgement) jAnswer.value = '';
     jSend.disabled = false;
     jSend.classList.remove('sent'); jSend.textContent = 'ENVIAR PARA O CLAUDE';
     jStatus.textContent = 'Cole a resposta da sua IA e envie.';
@@ -301,9 +316,34 @@
     show('judge');
   });
 
+  // Servidor avisa que o julgamento foi encerrado (resposta aceita OU timeout).
+  // Tira o admin da tela do juiz imediatamente, sem esperar a nota do Claude.
+  socket.on('judge:close', d=>{
+    if (d.teamId !== myTeam) return;
+    if (d.judgeToken && activeJudgeToken && Number(d.judgeToken) !== Number(activeJudgeToken)) return;
+    if (timerInt){ clearInterval(timerInt); timerInt=null; }
+    awaitingJudgement = false;
+    pendingAnswer = null;
+    jSend.disabled = false;
+    jSend.classList.remove('sent');
+    jSend.textContent = 'ENVIAR PARA O CLAUDE';
+    jAnswer.value = '';
+    waitOverlay.style.display = 'none';
+    padsWrap.style.display = 'grid';
+    phaseLabel.textContent = '⏳ Claude avaliando…';
+    ctrlStatus.textContent = 'Resposta enviada! Continue correndo enquanto o Claude avalia.';
+    ctrlStatus.className = 'status judge';
+    show('controller');
+    if (navigator.vibrate) navigator.vibrate(20);
+  });
+
+
   socket.on('team:judged', d=>{
     if (d.teamId !== myTeam) return;
+    if (d.judgeToken && activeJudgeToken && Number(d.judgeToken) !== Number(activeJudgeToken)) return;
     awaitingJudgement = false;
+    activeJudgeToken = null;
+    activeBarrierIdx = null;
     if (timerInt){ clearInterval(timerInt); timerInt=null; }
     const html = `
       <div class="result ${d.boosted?'win':''}">
@@ -312,9 +352,20 @@
         <div style="font-size:13px;color:#9B968B;margin-top:6px;">${escapeHtml(d.justification||'')}</div>
         ${d.boosted?'<div style="margin-top:8px;font-weight:800;color:#7ad27a">⚡ BOOST liberado!</div>':'<div style="margin-top:8px;color:#9B968B;font-size:12px;">Sem boost desta vez (nota < 7).</div>'}
       </div>`;
-    jResult.innerHTML = html;
+    // Fecha o modal/tela do juiz e mostra o resultado na tela de controle
     ctrlResult.innerHTML = html;
-    setTimeout(()=>{ ctrlResult.innerHTML=''; jResult.innerHTML=''; }, 6000);
+    jResult.innerHTML = '';
+    jAnswer.value = '';
+    jSend.disabled = false;
+    jSend.classList.remove('sent');
+    jSend.textContent = 'ENVIAR PARA O CLAUDE';
+    jStatus.textContent = 'Cole a resposta da sua IA e envie.';
+    waitOverlay.style.display = 'none';
+    padsWrap.style.display = 'grid';
+    phaseLabel.textContent = d.boosted ? '⚡ BOOST!' : '🏁 CORRA!';
+    show('controller');
+    if (navigator.vibrate) navigator.vibrate(d.boosted ? [40,40,80] : 30);
+    setTimeout(()=>{ ctrlResult.innerHTML=''; }, 6000);
   });
 
   function startTimer(dl){
@@ -358,7 +409,7 @@
   jSend.onclick = ()=>{
     const txt = jAnswer.value.trim();
     if (!txt) { jStatus.textContent = 'Cole a resposta antes de enviar.'; return; }
-    pendingAnswer = txt;
+    pendingAnswer = { text: txt, judgeToken: activeJudgeToken, barrierIdx: activeBarrierIdx };
     awaitingJudgement = true;
     jSend.classList.add('sent'); jSend.textContent = '✓ ENVIADO — Claude avaliando…';
     jSend.disabled = true;
@@ -369,7 +420,7 @@
     } else if (!myTeam){
       jStatus.textContent = 'Reentrando na equipe para enviar…';
     } else {
-      socket.emit('player:answer', txt);
+      socket.emit('player:answer', pendingAnswer);
       pendingAnswer = null;
       jStatus.textContent = 'Resposta enviada! Aguardando avaliação do Claude…';
     }

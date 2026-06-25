@@ -5,18 +5,15 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "tunnel": "npx --yes localtunnel --port 3000 --subdomain corrida-agentes",
-    "start:tunnel": "concurrently -k -n srv,tun \"npm start\" \"npm run tunnel\""
+    "start:public": "node start-public.js"
   },
   "dependencies": {
     "express": "^4.19.2",
+    "localtunnel": "^2.0.2",
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.8.3"
   },
-  "devDependencies": {
-    "concurrently": "^8.2.2",
-    "localtunnel": "^2.0.2"
-  },
+  "devDependencies": {},
   "engines": {
     "node": ">=18"
   }

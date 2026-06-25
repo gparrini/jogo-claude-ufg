@@ -6,6 +6,7 @@
 // ============================================================
 const path = require('path');
 const http = require('http');
+const os   = require('os');
 const express = require('express');
 const { Server } = require('socket.io');
 
@@ -34,9 +35,26 @@ const BOOST_MULT      = 2.4;
 const TICK_MS         = 80;
 const SUBMIT_TIMEOUT  = 120_000;
 const SCORE_FOR_BOOST = 7;
-const PUBLIC_URL      = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || '';
 const ANTHROPIC_KEY   = process.env.ANTHROPIC_API_KEY || '';
-const CLAUDE_MODEL    = process.env.CLAUDE_MODEL || 'claude-3-5-sonnet-20241022';
+const CLAUDE_MODEL    = process.env.CLAUDE_MODEL || 'claude-sonnet-4-5';
+
+// ---------- Auto-detect IP local (caso PUBLIC_URL não esteja setado) ----------
+function detectLocalIp(){
+  const nets = os.networkInterfaces();
+  const ordered = Object.keys(nets).sort((a,b)=>{
+    const pri = n => /wlan|wi-?fi|wlp|en0|eth|enp/i.test(n) ? 0 : 1;
+    return pri(a) - pri(b);
+  });
+  for (const name of ordered){
+    for (const n of nets[name] || []){
+      if (n.family === 'IPv4' && !n.internal) return n.address;
+    }
+  }
+  return null;
+}
+const PORT = parseInt(process.env.PORT || '3000', 10);
+const LOCAL_IP = detectLocalIp();
+const PUBLIC_URL = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || (LOCAL_IP ? `http://${LOCAL_IP}:${PORT}` : '')).replace(/\/+$/,'');
 
 // ===================== PROMPTS DAS BARREIRAS =====================
 const PROMPTS = [
@@ -61,6 +79,7 @@ function freshTeam(t){
     steps: 0, progress: 0,
     boost: false,
     judging: false,
+    evaluating: false,
     atBarrier: false,
     nextBarrierIdx: 0,
     prompt: '',
@@ -69,11 +88,13 @@ function freshTeam(t){
     score: null,
     justification: '',
     lastResult: null, // {score, justification, boosted}
+    judgeToken: 0,
   };
 }
 let phase = 'lobby';      // lobby | racing | ended
 let lastTouch = {};
 let raceWinner = null;
+let judgeHistory = [];    // [{ id, teamId, teamName, color, barrierIdx, prompt, answer, score, justification, boosted, at }]
 
 function publicTeams(){
   // não expor sockets crus
@@ -86,6 +107,7 @@ function publicTeams(){
       progress: t.progress,
       boost: t.boost,
       judging: t.judging,
+      evaluating: t.evaluating,
       atBarrier: t.atBarrier,
       nextBarrierIdx: t.nextBarrierIdx,
       hasAdmin: !!t.adminSocketId,
@@ -104,6 +126,7 @@ function broadcastState(){
     barriers: BARRIERS,
     totalPlayers: Object.values(teams).reduce((a,t)=>a+t.players,0),
     teams: publicTeams(),
+    history: judgeHistory,
   });
 }
 
@@ -115,6 +138,7 @@ function resetGame(){
   }
   phase = 'lobby';
   raceWinner = null;
+  judgeHistory = [];
   io.emit('reset');
   broadcastState();
 }
@@ -128,6 +152,7 @@ function startGame(){
   }
   phase = 'racing';
   raceWinner = null;
+  judgeHistory = [];
   broadcastState();
 }
 
@@ -136,7 +161,10 @@ setInterval(()=>{
   if (phase !== 'racing') return;
   for (const t of TEAMS){
     const tm = teams[t.id];
-    if (tm.judging) { tm.steps = 0; continue; }
+    // Durante barreira/avaliação, a equipe fica travada na posição atual.
+    // Importante: "evaluating" impede o loop de abrir uma nova barreira
+    // enquanto a resposta ainda está sendo pontuada pelo Claude/fallback.
+    if (tm.judging || tm.evaluating) { tm.steps = 0; continue; }
     const mult = tm.boost ? BOOST_MULT : 1;
     const gained = (tm.steps * mult) / FINISH_STEPS;
     tm.progress = Math.min(1, tm.progress + gained);
@@ -175,13 +203,15 @@ function startJudgingForTeam(tm){
   // notifica admin com prompt
   if (tm.adminSocketId){
     io.to(tm.adminSocketId).emit('judge:prompt', {
-      teamId: tm.id, prompt: tm.prompt, deadline: tm.deadline
+      teamId: tm.id, prompt: tm.prompt, deadline: tm.deadline,
+      barrierIdx: myBarrier, judgeToken: myToken,
     });
   }
   // notifica todos do telão / não-admins
   io.emit('team:judging', {
     teamId: tm.id, teamName: tm.name, color: tm.color,
     prompt: tm.prompt, deadline: tm.deadline,
+    barrierIdx: myBarrier, judgeToken: myToken,
   });
 
   // timeout — só dispara se ainda for o MESMO julgamento
@@ -195,36 +225,59 @@ function startJudgingForTeam(tm){
 
 async function evaluateTeam(tm){
   if (!tm.judging) return;
-  tm.judging = false; // trava reentrada
-  io.emit('team:evaluating', { teamId: tm.id, teamName: tm.name });
+  const barrierIdx = tm.nextBarrierIdx;
+  const judgeToken = tm.judgeToken;
+  const prompt = tm.prompt;
+  const answer = tm.answer;
+  tm.judging = false; // fecha a tela de resposta
+  tm.evaluating = true; // trava reentrada no loop até a nota sair
+  tm.nextBarrierIdx += 1; // já consome esta barreira para nunca reabrir o mesmo prompt
+  // Força o admin a sair imediatamente da tela de juiz (não espera Claude)
+  if (tm.adminSocketId) io.to(tm.adminSocketId).emit('judge:close', { teamId: tm.id, barrierIdx, judgeToken });
+  io.emit('team:evaluating', { teamId: tm.id, teamName: tm.name, barrierIdx, judgeToken });
+
 
   let score = 0, justification = '';
   try {
-    const r = await scoreWithClaude(tm.prompt, [{ id: tm.id, name: tm.name, answer: tm.answer || '(sem resposta)' }]);
+    const r = await scoreWithClaude(prompt, [{ id: tm.id, name: tm.name, answer: answer || '(sem resposta)' }]);
     score = r[0].score;
     justification = r[0].justification;
   } catch (err){
     console.error('[Claude] erro:', err.message);
-    score = tm.answer.trim() ? Math.min(10, 3 + Math.floor(tm.answer.length/50)) : 0;
+    score = answer.trim() ? Math.min(10, 3 + Math.floor(answer.length/50)) : 0;
     justification = 'Avaliação local (Claude indisponível).';
   }
+  tm.evaluating = false;
   tm.score = score;
   tm.justification = justification;
   tm.atBarrier = false;
-  tm.nextBarrierIdx += 1;
 
   const boosted = score >= SCORE_FOR_BOOST;
   if (boosted){
     tm.boost = true;
     setTimeout(()=>{ tm.boost = false; broadcastState(); }, BOOST_DURATION);
   }
-  tm.lastResult = { score, justification, boosted, prompt: tm.prompt };
+  tm.lastResult = { score, justification, boosted, prompt };
+
+  const entry = {
+    id: `${tm.id}-${barrierIdx}-${Date.now()}`,
+    teamId: tm.id, teamName: tm.name, color: tm.color,
+    barrierIdx,
+    prompt,
+    answer,
+    score, justification, boosted,
+    at: Date.now(),
+  };
+  judgeHistory.push(entry);
 
   io.emit('team:judged', {
     teamId: tm.id, teamName: tm.name, color: tm.color,
     score, justification, boosted,
-    answer: tm.answer,
-    prompt: tm.prompt,
+    answer,
+    prompt,
+    barrierIdx,
+    judgeToken,
+    entryId: entry.id,
   });
   broadcastState();
 }
@@ -274,8 +327,11 @@ function promoteAdminIfNeeded(teamId){
   tm.adminSocketId = newAdmin;
   if (newAdmin){
     io.to(newAdmin).emit('you:admin', { team: teamId });
-    if (tm.judging){
-      io.to(newAdmin).emit('judge:prompt', { teamId, prompt: tm.prompt, deadline: tm.deadline });
+    if (tm.judging && !tm.answer){
+      io.to(newAdmin).emit('judge:prompt', {
+        teamId, prompt: tm.prompt, deadline: tm.deadline,
+        barrierIdx: tm.nextBarrierIdx, judgeToken: tm.judgeToken,
+      });
     }
   }
 }
@@ -324,10 +380,14 @@ io.on('connection', socket => {
     }
     socket.data.isAdmin = isAdmin;
     socket.emit('player:joined', { team: teamId, isAdmin });
-    // se já está em julgamento e este é o admin, manda o prompt
-    if (isAdmin && teams[teamId].judging){
-      socket.emit('judge:prompt', { teamId, prompt: teams[teamId].prompt, deadline: teams[teamId].deadline });
+    // se já está em julgamento, este é o admin e a equipe ainda não respondeu, manda o prompt
+    if (isAdmin && teams[teamId].judging && !teams[teamId].answer){
+      socket.emit('judge:prompt', {
+        teamId, prompt: teams[teamId].prompt, deadline: teams[teamId].deadline,
+        barrierIdx: teams[teamId].nextBarrierIdx, judgeToken: teams[teamId].judgeToken,
+      });
     }
+
     broadcastState();
   });
 
@@ -340,7 +400,9 @@ io.on('connection', socket => {
     teams[t].steps += 1;
   });
 
-  socket.on('player:answer', (text) => {
+  socket.on('player:answer', (payload) => {
+    const text = payload && typeof payload === 'object' ? payload.text : payload;
+    const answerToken = payload && typeof payload === 'object' ? payload.judgeToken : null;
     const t = socket.data.team;
     if (!t || !teams[t]){
       socket.emit('answer:rejected', { reason: 'sem-equipe' });
@@ -350,6 +412,11 @@ io.on('connection', socket => {
     if (!tm.judging){
       console.log(`[answer] ✗ ${tm.name}: recebido fora de julgamento`);
       socket.emit('answer:rejected', { reason: 'fora-julgamento' });
+      return;
+    }
+    if (answerToken && tm.judgeToken && Number(answerToken) !== Number(tm.judgeToken)){
+      console.log(`[answer] ✗ ${tm.name}: token antigo (${answerToken} != ${tm.judgeToken})`);
+      socket.emit('answer:rejected', { reason: 'julgamento-antigo' });
       return;
     }
     // se o socket que mandou não é o admin atual, promove-o (recupera após queda/refresh)
@@ -378,10 +445,14 @@ io.on('connection', socket => {
 });
 
 // ===================== START =====================
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log('🏁 Corrida dos Agentes em http://localhost:' + PORT);
-  if (PUBLIC_URL) console.log('   🌐 URL pública:  ' + PUBLIC_URL + '/mobile.html');
-  console.log('   📱 Celular:      http://localhost:' + PORT + '/mobile.html');
-  console.log(ANTHROPIC_KEY ? '   ⚖️  Juiz Claude:  ATIVO' : '   ⚠️  ANTHROPIC_API_KEY ausente — usando avaliação local.');
+server.listen(PORT, '0.0.0.0', () => {
+  console.log('\n🏁 Corrida dos Agentes');
+  console.log('   💻 Telão:        http://localhost:' + PORT);
+  if (LOCAL_IP) console.log('   📱 Celular LAN:  http://' + LOCAL_IP + ':' + PORT + '/mobile.html');
+  if (PUBLIC_URL && (!LOCAL_IP || !PUBLIC_URL.startsWith(`http://${LOCAL_IP}`))) {
+    console.log('   🌐 URL pública:  ' + PUBLIC_URL + '/mobile.html');
+  }
+  console.log('   🔗 QR aponta para: ' + (PUBLIC_URL || 'localhost') + '/mobile.html');
+  console.log(ANTHROPIC_KEY ? '   ⚖️  Juiz Claude:  ATIVO (' + CLAUDE_MODEL + ')' : '   ⚠️  ANTHROPIC_API_KEY ausente — usando avaliação local.');
+  console.log('');
 });
